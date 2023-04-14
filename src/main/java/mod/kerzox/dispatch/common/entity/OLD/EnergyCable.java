@@ -1,8 +1,5 @@
-package mod.kerzox.dispatch.common.entity;
+package mod.kerzox.dispatch.common.entity.OLD;
 
-import mod.kerzox.dispatch.common.entity.manager.EnergyCableManager;
-import mod.kerzox.dispatch.common.entity.manager.basic.IConnectablePipe;
-import mod.kerzox.dispatch.common.entity.manager.basic.PipeManager;
 import mod.kerzox.dispatch.common.util.IServerTickable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -14,12 +11,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -53,13 +47,13 @@ public class EnergyCable extends BasicPipeBlockEntity implements IServerTickable
 
     @Override
     public void createManager() {
-        this.setManager(new EnergyCableManager(this));
+        this.setManager(new OldEnergyCableManager(this));
 
     }
 
     @Override
-    public EnergyCableManager getManager() {
-        return (EnergyCableManager) super.getManager();
+    public OldEnergyCableManager getManager() {
+        return (OldEnergyCableManager) super.getManager();
     }
 
     @Override

@@ -1,7 +1,5 @@
 package mod.kerzox.dispatch.common.entity;
 
-import mod.kerzox.dispatch.common.entity.manager.basic.IConnectablePipe;
-import mod.kerzox.dispatch.common.entity.manager.basic.PipeManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;

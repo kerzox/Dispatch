@@ -2,31 +2,26 @@ package mod.kerzox.dispatch.registry;
 
 import mod.kerzox.dispatch.common.block.BasicEntityBlock;
 import mod.kerzox.dispatch.common.block.transfer.EnergyCableBlock;
-import mod.kerzox.dispatch.common.entity.EnergyCable;
+import mod.kerzox.dispatch.common.block.transfer.ItemCableBlock;
+import mod.kerzox.dispatch.common.entity.MultiroleEnergyCable;
+import mod.kerzox.dispatch.common.entity.MultiroleItemCable;
+import mod.kerzox.dispatch.common.entity.OLD.EnergyCable;
 import mod.kerzox.dispatch.common.entity.Generator;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleType;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Material;
-import net.minecraftforge.common.crafting.CraftingHelper;
-import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -37,8 +32,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static mod.kerzox.dispatch.Dispatch.MODID;
-import static mod.kerzox.dispatch.registry.DispatchRegistry.Blocks.ENERGY_CABLE_BLOCK;
-import static mod.kerzox.dispatch.registry.DispatchRegistry.Blocks.ENERGY_MANIPULATOR_BLOCK;
+import static mod.kerzox.dispatch.registry.DispatchRegistry.Blocks.*;
 
 public class DispatchRegistry {
 
@@ -116,6 +110,10 @@ public class DispatchRegistry {
         public static final makeBlock<EnergyCableBlock> ENERGY_CABLE_BLOCK = makeBlock.buildCustomSuppliedItem("energy_cable_block", EnergyCableBlock::new, BlockBehaviour.Properties.of(Material.AIR).sound(SoundType.WOOL),
                 () -> new EnergyCableBlock.Item(new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
 
+        public static final makeBlock<ItemCableBlock> ITEM_CABLE_BLOCK = makeBlock.buildCustomSuppliedItem("item_cable_block", ItemCableBlock::new, BlockBehaviour.Properties.of(Material.AIR).sound(SoundType.WOOL),
+                () -> new ItemCableBlock.Item(new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+
         public static final makeBlock<BasicEntityBlock<Generator>> ENERGY_MANIPULATOR_BLOCK = makeBlock.build("energy_gen_block", prop -> new BasicEntityBlock<Generator>(BlockEntities.ENERGY_GENERATOR.getType(),
                 BlockBehaviour.Properties.of(Material.AIR).sound(SoundType.WOOL)), BlockBehaviour.Properties.of(Material.AIR).sound(SoundType.WOOL), true);
 
@@ -165,7 +163,9 @@ public class DispatchRegistry {
 
     public static final class BlockEntities {
 
-        public static final makeBlockEntity<EnergyCable> ENERGY_CABLE = makeBlockEntity.build("energy_cable", EnergyCable::new, ENERGY_CABLE_BLOCK);
+        public static final makeBlockEntity<MultiroleEnergyCable> ENERGY_CABLE = makeBlockEntity.build("energy_cable", MultiroleEnergyCable::new, ENERGY_CABLE_BLOCK);
+        public static final makeBlockEntity<MultiroleItemCable> ITEM_CABLE = makeBlockEntity.build("item_cable", MultiroleItemCable::new, ITEM_CABLE_BLOCK);
+
 
         public static final makeBlockEntity<Generator> ENERGY_GENERATOR = makeBlockEntity.build("energy_generator", Generator::new, ENERGY_MANIPULATOR_BLOCK);
 

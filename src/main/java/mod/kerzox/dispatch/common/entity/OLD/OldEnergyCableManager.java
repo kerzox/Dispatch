@@ -1,10 +1,6 @@
-package mod.kerzox.dispatch.common.entity.manager;
+package mod.kerzox.dispatch.common.entity.OLD;
 
 import mod.kerzox.dispatch.common.capability.energy.EnergyCableStorage;
-import mod.kerzox.dispatch.common.entity.EnergyCable;
-import mod.kerzox.dispatch.common.entity.manager.basic.IConnectablePipe;
-import mod.kerzox.dispatch.common.entity.manager.basic.IPipeCache;
-import mod.kerzox.dispatch.common.entity.manager.basic.PipeManager;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.Capability;
@@ -15,7 +11,7 @@ import net.minecraftforge.energy.IEnergyStorage;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class EnergyCableManager extends PipeManager {
+public class OldEnergyCableManager extends OldPipeManager {
 
     public static class EnergyCache implements IPipeCache {
 
@@ -82,7 +78,7 @@ public class EnergyCableManager extends PipeManager {
 
     private int prevNetworkSize = 1;
 
-    public EnergyCableManager(EnergyCable managerTile) {
+    public OldEnergyCableManager(EnergyCable managerTile) {
         super(managerTile, new EnergyCache());
     }
 

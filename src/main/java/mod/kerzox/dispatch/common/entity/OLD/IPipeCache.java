@@ -1,8 +1,6 @@
-package mod.kerzox.dispatch.common.entity.manager.basic;
+package mod.kerzox.dispatch.common.entity.OLD;
 
 import net.minecraft.nbt.CompoundTag;
-
-import java.awt.*;
 
 public interface IPipeCache {
 

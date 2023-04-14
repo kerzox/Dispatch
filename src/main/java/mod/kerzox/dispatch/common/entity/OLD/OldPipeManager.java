@@ -1,4 +1,4 @@
-package mod.kerzox.dispatch.common.entity.manager.basic;
+package mod.kerzox.dispatch.common.entity.OLD;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,14 +13,14 @@ import net.minecraftforge.common.util.LazyOptional;
 
 import java.util.*;
 
-public abstract class PipeManager {
+public abstract class OldPipeManager {
 
     private IConnectablePipe managerTile;
     private HashSet<IConnectablePipe> network = new HashSet<>();
 
     private IPipeCache cache;
 
-    public PipeManager(IConnectablePipe entity, IPipeCache cache) {
+    public OldPipeManager(IConnectablePipe entity, IPipeCache cache) {
         this.managerTile = entity;
         this.cache = cache;
         attach(entity);

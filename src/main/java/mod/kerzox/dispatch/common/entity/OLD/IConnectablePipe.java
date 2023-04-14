@@ -1,11 +1,7 @@
-package mod.kerzox.dispatch.common.entity.manager.basic;
+package mod.kerzox.dispatch.common.entity.OLD;
 
-import mod.kerzox.dispatch.common.block.DefaultPipeBlock;
-import mod.kerzox.dispatch.common.entity.BasicBlockEntity;
-import mod.kerzox.dispatch.common.entity.BasicPipeBlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 
 import java.util.Collection;
@@ -19,7 +15,7 @@ public interface IConnectablePipe<Capability> {
     void toCache(Direction direction, LazyOptional<Capability> cap);
     Collection<LazyOptional<Capability>> getAllCapabilites();
 
-    default void setManager(PipeManager manager) {
+    default void setManager(OldPipeManager manager) {
         if (getPipe() != null) {
             getPipe().setManager(manager);
         }
@@ -31,7 +27,7 @@ public interface IConnectablePipe<Capability> {
         } else return false;
     }
 
-     default PipeManager getManager() {
+     default OldPipeManager getManager() {
         return getPipe().getManager();
      }
 

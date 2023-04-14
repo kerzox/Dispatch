@@ -79,6 +79,6 @@ public class Generator extends BasicBlockEntity implements IServerTickable {
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return cap == ForgeCapabilities.ENERGY && !generator ? lazy.cast() : LazyOptional.empty();
+        return cap == ForgeCapabilities.ENERGY ? lazy.cast() : LazyOptional.empty();
     }
 }

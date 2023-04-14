@@ -1,7 +1,6 @@
-package mod.kerzox.dispatch.common.entity;
+package mod.kerzox.dispatch.common.entity.OLD;
 
-import mod.kerzox.dispatch.common.entity.manager.basic.IConnectablePipe;
-import mod.kerzox.dispatch.common.entity.manager.basic.PipeManager;
+import mod.kerzox.dispatch.common.entity.BasicBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -12,7 +11,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -23,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 public abstract class BasicPipeBlockEntity extends BasicBlockEntity {
 
-    private PipeManager manager;
+    private OldPipeManager manager;
     protected CompoundTag nbt;
 
     public BasicPipeBlockEntity(BlockEntityType<?> pType, BlockPos pPos, BlockState pBlockState) {
@@ -31,7 +29,7 @@ public abstract class BasicPipeBlockEntity extends BasicBlockEntity {
         this.createManager();
     }
 
-    public void setManager(PipeManager manager) {
+    public void setManager(OldPipeManager manager) {
         this.manager = manager;
     }
 
@@ -51,7 +49,7 @@ public abstract class BasicPipeBlockEntity extends BasicBlockEntity {
         return this.manager.getCapability(cap, side);
     }
 
-    public PipeManager getManager() {
+    public OldPipeManager getManager() {
         return manager;
     }
 

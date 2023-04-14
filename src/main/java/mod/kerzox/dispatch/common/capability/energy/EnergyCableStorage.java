@@ -1,6 +1,9 @@
 package mod.kerzox.dispatch.common.capability.energy;
 
+import mod.kerzox.dispatch.common.entity.manager.INetworkCache;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.energy.EnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 
 public class EnergyCableStorage extends EnergyStorage {
 
@@ -19,4 +22,6 @@ public class EnergyCableStorage extends EnergyStorage {
         if (this.energy == 0) return;
         this.energy -= received;
     }
+
+
 }
