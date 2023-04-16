@@ -17,14 +17,14 @@ import net.minecraftforge.energy.IEnergyStorage;
 
 import java.util.*;
 
-import static mod.kerzox.dispatch.registry.DispatchRegistry.BlockEntities.ENERGY_CABLE;
+import static mod.kerzox.dispatch.registry.DispatchRegistry.BlockEntities.MULTIROLE_PIPE;
 
 public class EnergyCable extends BasicPipeBlockEntity implements IServerTickable, IConnectablePipe<IEnergyStorage> {
 
     private final Map<Direction, LazyOptional<IEnergyStorage>> cache = new EnumMap<>(Direction.class);
 
     public EnergyCable(BlockPos pPos, BlockState pBlockState) {
-        super(ENERGY_CABLE.get(), pPos, pBlockState);
+        super(MULTIROLE_PIPE.get(), pPos, pBlockState);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class EnergyCable extends BasicPipeBlockEntity implements IServerTickable
     }
 
     @Override
-    protected void read(CompoundTag pTag) {
+    public void read(CompoundTag pTag) {
 
     }
 

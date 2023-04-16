@@ -109,7 +109,7 @@ public abstract class BasicPipeBlockEntity extends BasicBlockEntity {
      * When load is called this will be called, (on world load, nbt read and updateBlockEntity function)
      * @param pTag nbt data
      */
-    protected void read(CompoundTag pTag) {
+    public void read(CompoundTag pTag) {
 
     }
 

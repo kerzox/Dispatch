@@ -1,6 +1,6 @@
 package mod.kerzox.dispatch.common.entity.OLD;
 
-import mod.kerzox.dispatch.common.capability.energy.EnergyCableStorage;
+import mod.kerzox.dispatch.common.capability.EnergyCableStorage;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.Capability;

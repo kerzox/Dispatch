@@ -75,7 +75,7 @@ public class PipeNetworkUtil {
 
             MultirolePipe current = queue.poll();
 
-            current.findCapabilityHolders();
+//            current.findCapabilityHolders();
 
             if (current.hasCachedInventories()) {
                 populatedPipe.add(current);

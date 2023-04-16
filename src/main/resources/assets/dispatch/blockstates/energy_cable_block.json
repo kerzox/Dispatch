@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "dispatch:block/energy_cable"
+    }
+  }
+}

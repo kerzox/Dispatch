@@ -2,6 +2,8 @@ package mod.kerzox.dispatch.common.entity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -87,7 +89,22 @@ public abstract class BasicBlockEntity extends BlockEntity {
      */
 
     protected void addToUpdateTag(CompoundTag tag) {
+        tag.put("pos", NbtUtils.writeBlockPos(this.worldPosition));
         write(tag);
+    }
+
+    @Override
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        CompoundTag tag = pkt.getTag();
+        // This will call loadClientData()
+        handleUpdateTag(tag);
+
+        super.onDataPacket(net, pkt);
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
     }
 
     public boolean onPlayerClick(Level pLevel, Player pPlayer, BlockPos pPos, InteractionHand pHand, BlockHitResult pHit) {

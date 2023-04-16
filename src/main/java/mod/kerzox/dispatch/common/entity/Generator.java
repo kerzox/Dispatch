@@ -1,22 +1,18 @@
 package mod.kerzox.dispatch.common.entity;
 
-import mod.kerzox.dispatch.common.capability.energy.EnergyCableStorage;
+import mod.kerzox.dispatch.common.capability.EnergyCableStorage;
 import mod.kerzox.dispatch.common.util.IServerTickable;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.Lazy;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.EnergyStorage;
 import org.jetbrains.annotations.NotNull;
