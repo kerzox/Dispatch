@@ -128,29 +128,6 @@ public abstract class MultirolePipeBlock extends BasicEntityBlock<MultirolePipe>
     }
 
     @Override
-    public VoxelShape getVisualShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        return super.getVisualShape(pState, pLevel, pPos, pContext);
-    }
-
-    @Override
-    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
-        super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
-        if (pLevel.getBlockEntity(pPos) instanceof IPipe onPlacement) {
-           // onPlacement.getAsBlockEntity().findCapabilityHolders();
-//            for (Direction direction : Direction.values()) {
-//                BlockEntity entity = pLevel.getBlockEntity(pPos.relative(direction));
-//                if (entity != null) {
-//                    if (entity instanceof )
-//                    onPlacement.addVisualConnection(direction, true);
-//
-//                }
-//            }
-          //  onPlacement.getAsBlockEntity().syncBlockEntity();
-//            onPlacement.getAsBlockEntity().findCapabilityHolders();
-        }
-    }
-
-    @Override
     public void destroy(LevelAccessor pLevel, BlockPos pPos, BlockState pState) {
         super.destroy(pLevel, pPos, pState);
     }
@@ -176,8 +153,8 @@ public abstract class MultirolePipeBlock extends BasicEntityBlock<MultirolePipe>
             } else if (pLevel.getBlockEntity(pFromPos) != null) {
                 notifiedPipe.addVisualConnection(Direction.fromNormal(pFromPos.subtract(pPos)), true);
                 notifiedPipe.getAsBlockEntity().findCapabilityHolders();
-                notifiedPipe.getManager().onNetworkUpdate();
             }
+            notifiedPipe.getManager().onNetworkUpdate(notifiedPipe);
         }
 
     }

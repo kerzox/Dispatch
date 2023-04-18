@@ -1,8 +1,13 @@
 package mod.kerzox.dispatch.common.capability;
 
 import mod.kerzox.dispatch.common.entity.manager.IDispatchCapability;
+import mod.kerzox.dispatch.common.util.IPipe;
+import mod.kerzox.dispatch.common.util.PipeTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+
+import java.util.List;
+import java.util.Map;
 
 public class FluidCableStorage extends FluidTank implements IDispatchCapability {
 
@@ -33,5 +38,15 @@ public class FluidCableStorage extends FluidTank implements IDispatchCapability 
         if (capability instanceof FluidCableStorage storage) {
 
         }
+    }
+
+    @Override
+    public IDispatchCapability updateFrom(Map<IPipe, Map<PipeTypes, List<IPipe>>> subNetworks) {
+        return null;
+    }
+
+    @Override
+    public void clear() {
+
     }
 }

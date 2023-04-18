@@ -1,6 +1,5 @@
 package mod.kerzox.dispatch.common.entity.manager;
 
-import com.google.common.io.Files;
 import mod.kerzox.dispatch.common.capability.EnergyCableStorage;
 import mod.kerzox.dispatch.common.capability.FluidCableStorage;
 import mod.kerzox.dispatch.common.capability.ItemStackCableStorage;
@@ -16,6 +15,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -24,6 +24,7 @@ import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.Subject;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,21 +37,11 @@ public class PipeManager {
 
     protected Queue<IPipe> queue = new LinkedList<>();
     protected HashSet<IPipe> network = new HashSet<>();
-    protected HashSet<IPipe> subNetworks = new HashSet<>();
+    protected Map<IPipe, Map<PipeTypes, List<IPipe>>> subNetworks = new HashMap<>();
 
     protected HashSet<PipeTypes> subTypes = new HashSet<>();
 
-    protected Map<Capability<?>, IDispatchCapability> capabilitiesInstances = new HashMap<>() {
-        {
-            put(ForgeCapabilities.ENERGY, new EnergyCableStorage(ENERGY_CAPACITY));
-            put(ForgeCapabilities.ITEM_HANDLER, new ItemStackCableStorage(ITEM_SLOT));
-            put(ForgeCapabilities.FLUID_HANDLER, new FluidCableStorage(1000));
-        }
-    };
-
-    protected Map<Capability<?>, LazyOptional<?>> capabilityMap = new HashMap<>();
-
-    protected int index = 0;
+    protected int[] indexes = new int[PipeTypes.values().length];
 
     public PipeManager(IPipe pipe) {
         this.manager = pipe;
@@ -64,11 +55,110 @@ public class PipeManager {
             if (pipe != null) {
                 pipe.getAsBlockEntity().syncBlockEntity();
                 pipe.getAsBlockEntity().getLevel().updateNeighborsAt(pipe.getAsBlockEntity().getBlockPos(), pipe.getAsBlockEntity().getBlockState().getBlock());
-                onNetworkUpdate();
+                onNetworkUpdate(pipe);
+                //     onNetworkUpdate();
             }
         }
 
+        // populateSubnet();
+
         if (this.subNetworks.size() > 0) {
+            for (Map.Entry<IPipe, Map<PipeTypes, List<IPipe>>> mapEntry : this.subNetworks.entrySet()) {
+                Map<PipeTypes, List<IPipe>> sub_network = mapEntry.getValue();
+                for (PipeTypes subtype : subTypes) {
+                    if (sub_network.get(subtype) == null) continue;
+                    for (IPipe currentPipe : sub_network.get(subtype)) {
+                        currentPipe.getAsBlockEntity().getCachedByCapability(subtype.getCap()).forEach((direction, lazyOptional) -> this.doCapabilityTick(mapEntry.getKey(), currentPipe, subtype, direction, lazyOptional));
+                    }
+                }
+            }
+        }
+    }
+
+    private void doCapabilityTick(IPipe capabilityProviderPipe, IPipe currentPipe, PipeTypes type, Direction direction, LazyOptional<?>
+            lazyOptional) {
+        BlockEntity entity = currentPipe.getAsBlockEntity().getLevel().getBlockEntity(currentPipe.getAsBlockEntity().getBlockPos().relative(direction));
+
+        if (entity != null) {
+            // ignore pipes and hopper entities while in direction up
+            if (entity instanceof MultirolePipe || (entity instanceof HopperBlockEntity && direction == Direction.UP))
+                return;
+            LazyOptional<?> capability = entity.getCapability(type.getCap(), direction);
+            capability.ifPresent(cap -> {
+                if (cap instanceof IEnergyStorage energyHandler) doEnergyMethod(capabilityProviderPipe, currentPipe, energyHandler);
+                else if (cap instanceof IItemHandler itemHandler) doItemMethod(capabilityProviderPipe, currentPipe, itemHandler);
+            });
+        }
+
+    }
+
+    private void doItemMethod(IPipe capabilityProviderPipe, IPipe currentPipe, IItemHandler itemHandler) {
+        Optional<ItemStack> stack = capabilityProviderPipe.getAsBlockEntity().getItemHandler().map(h -> h.getStackInSlot(0));
+        if (stack.isEmpty()) return;
+        if (stack.get().isEmpty()) return;
+        int itemsPerTick = 1;
+
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
+            if (itemHandler.insertItem(i, capabilityProviderPipe.getAsBlockEntity().getItemHandler().resolve().get().extractItem(0, itemsPerTick, true), true).isEmpty()) {
+                itemHandler.insertItem(i, capabilityProviderPipe.getAsBlockEntity().getItemHandler().resolve().get().extractItem(0, itemsPerTick, false), false);
+                break;
+            }
+        }
+
+    }
+
+    private void doEnergyMethod(IPipe capabilityProviderPipe, IPipe currentPipe, IEnergyStorage energy) {
+        AtomicInteger currentEnergy = new AtomicInteger(capabilityProviderPipe.getAsBlockEntity().getEnergyHandler().map(EnergyStorage::getEnergyStored).orElse(0));
+        if (energy.canReceive() && currentEnergy.get() > 0) {
+            int received = energy.receiveEnergy(Math.min(currentEnergy.get(), ENERGY_CAPACITY), false);
+            currentEnergy.addAndGet(-received);
+            capabilityProviderPipe.getAsBlockEntity().getEnergyHandler().ifPresent(handler -> handler.useEnergy(received));
+            currentPipe.getAsBlockEntity().setChanged();
+            capabilityProviderPipe.getAsBlockEntity().setChanged();
+        }
+    }
+
+
+//                if (indexes[subtype.ordinal()] > subNetworks.get(subtype).size() - 1) indexes[subtype.ordinal()] = 0;
+//                if (subNetworks.get(subtype).isEmpty()) continue;
+//                IPipe currentPipe = this.subNetworks.get(subtype).get(indexes[subtype.ordinal()]);
+    // if this pipe doesn't have this type we loop over
+//                    if (!currentPipe.getSubtypes().contains(subtype)) continue;
+//
+//                    currentPipe.getAsBlockEntity().getCachedByCapability(subtype.getCap()).forEach((direction, lazyOptional) -> {
+//                        BlockEntity entity = manager.getAsBlockEntity().getLevel().getBlockEntity(currentPipe.getAsBlockEntity().getBlockPos().relative(direction));
+//                        if (entity != null) {
+//                            if (entity instanceof MultirolePipe pipe) {
+//                                return;
+//
+//                            } else if (!(currentPipe.getAsBlockEntity().getSetting() == PipeSettings.PUSH || currentPipe.getAsBlockEntity().getSetting() == PipeSettings.BOTH)) {
+//                                return;
+//                            }
+//
+//                            entity.getCapability(subtype.getCap(), direction).ifPresent(cap -> {
+//                                if (cap instanceof IEnergyStorage energy) {
+//                                    doEnergyMethod(currentPipe, energy);
+//                                } else if (cap instanceof IItemHandler itemHandler) {
+//
+//                                }
+//                            });
+//                        }
+//
+//                    });
+//                    indexes[subtype.ordinal()] += 1;
+//                }
+
+//
+//    public void pushToSubnetworks() {
+//        if (this.subNetworks.size() > 0) {
+//            if (index > subNetworks.size() - 1) index = 0;
+//            IPipe currentPipe = (IPipe) this.subNetworks.toArray()[index];
+//        }
+//        index++;
+//    }
+
+    /*
+          if (this.subNetworks.size() > 0) {
             if (index > subNetworks.size() - 1) index = 0;
             IPipe currentPipe = (IPipe) this.subNetworks.toArray()[index];
             for (PipeTypes subtype : currentPipe.getSubtypes()) {
@@ -76,13 +166,13 @@ public class PipeManager {
                     BlockEntity entity = manager.getAsBlockEntity().getLevel().getBlockEntity(currentPipe.getAsBlockEntity().getBlockPos().relative(direction));
                     if (entity != null) {
                         if (entity instanceof MultirolePipe pipe) {
-                            if (pipe.getManager() == this) return;
-                            if (!(currentPipe.getAsBlockEntity().getSetting() == PipeSettings.PUSH || currentPipe.getAsBlockEntity().getSetting() == PipeSettings.DEFAULT || currentPipe.getAsBlockEntity().getSetting() == PipeSettings.BOTH)) {
-                                return;
-                            }
+//                            if (pipe.getManager() == this) return;
+//                            if (!(currentPipe.getAsBlockEntity().getSetting() == PipeSettings.PUSH || currentPipe.getAsBlockEntity().getSetting() == PipeSettings.DEFAULT || currentPipe.getAsBlockEntity().getSetting() == PipeSettings.BOTH)) {
+//                                return;
+//                            }
+                            return;
 
-                        }
-                        if (!(currentPipe.getAsBlockEntity().getSetting() == PipeSettings.PUSH || currentPipe.getAsBlockEntity().getSetting() == PipeSettings.BOTH)) {
+                        } else if (!(currentPipe.getAsBlockEntity().getSetting() == PipeSettings.PUSH || currentPipe.getAsBlockEntity().getSetting() == PipeSettings.BOTH)) {
                             return;
                         }
 
@@ -96,9 +186,16 @@ public class PipeManager {
                                 int itemsPerTick = 1;
 
                                 for (int i = 0; i < itemHandler.getSlots(); i++) {
-                                    if (itemHandler.insertItem(i, getItemHandler().resolve().get().extractItem(0, itemsPerTick, true), true).isEmpty()) {
-                                        itemHandler.insertItem(i, getItemHandler().resolve().get().extractItem(0, itemsPerTick, false), false);
-                                        break;
+                                    if (itemHandler instanceof ItemStackCableStorage cable) {
+                                        if (cable.insertItem(i, getItemHandler().resolve().get().extractItem(0, itemsPerTick, true), true, currentPipe.getAsBlockEntity(), direction).isEmpty()) {
+                                            cable.insertItem(i, getItemHandler().resolve().get().extractItem(0, itemsPerTick, false), false, currentPipe.getAsBlockEntity(), direction);
+                                            break;
+                                        }
+                                    } else {
+                                        if (itemHandler.insertItem(i, getItemHandler().resolve().get().extractItem(0, itemsPerTick, true), true).isEmpty()) {
+                                            itemHandler.insertItem(i, getItemHandler().resolve().get().extractItem(0, itemsPerTick, false), false);
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -109,19 +206,8 @@ public class PipeManager {
             }
             index++;
         }
+     */
 
-
-    }
-
-    private void doEnergyMethod(IPipe currentPipe, IEnergyStorage energy) {
-        AtomicInteger currentEnergy = new AtomicInteger(getEnergyHandler().map(EnergyStorage::getEnergyStored).orElse(0));
-        if (energy.canReceive() && currentEnergy.get() > 0) {
-            int received = energy.receiveEnergy(Math.min(currentEnergy.get(), ENERGY_CAPACITY), false);
-            currentEnergy.addAndGet(-received);
-            getEnergyHandler().ifPresent(handler -> handler.useEnergy(received));
-            currentPipe.getAsBlockEntity().setChanged();
-        }
-    }
 
     /* old
             for (IPipe pipe : this.subNetworks) {
@@ -149,75 +235,88 @@ public class PipeManager {
         }
      */
 
-    public int countSubnetForCapability(Capability<?> capability) {
-        int count = 0;
-        for (IPipe pipe : this.subNetworks) {
-            if (pipe instanceof MultirolePipe mp) {
-                count += mp.getCachedByCapability(capability).size();
-            }
-        }
-        return count;
-    }
-
-    public LazyOptional<EnergyCableStorage> getEnergyHandler() {
-        return getCapabilityHandler(ForgeCapabilities.ENERGY).cast();
-    }
-
-    public LazyOptional<FluidCableStorage> getFluidHandler() {
-        return getCapabilityHandler(ForgeCapabilities.FLUID_HANDLER).cast();
-    }
-
-    public LazyOptional<ItemStackCableStorage> getItemHandler() {
-        return getCapabilityHandler(ForgeCapabilities.ITEM_HANDLER).cast();
-    }
-
-    private void populateSubnet() {
-        this.subNetworks.clear();
-//        if (getTickingTile().getAsBlockEntity().getLevel() != null) {
-//            //this.subNetworks.addAll(PipeNetworkUtil.traverseAndFindValidCapabilityHolders(getNetwork(), getTickingTile().getAsBlockEntity()));
+//    public int countSubnetForCapability(Capability<?> capability) {
+//        int count = 0;
+//        for (IPipe pipe : this.subNetworks) {
+//            if (pipe instanceof MultirolePipe mp) {
+//                count += mp.getCachedByCapability(capability).size();
+//            }
 //        }
+//        return count;
+//    }
 
-        this.network.forEach(pipe -> {
-            pipe.findCapabilityHolders();
-            if (pipe.getAsBlockEntity().hasCachedInventories()) subNetworks.add(pipe);
-        });
+//    public LazyOptional<EnergyCableStorage> getEnergyHandler() {
+//        return getCapabilityHandler(ForgeCapabilities.ENERGY).cast();
+//    }
+//
+//    public LazyOptional<FluidCableStorage> getFluidHandler() {
+//        return getCapabilityHandler(ForgeCapabilities.FLUID_HANDLER).cast();
+//    }
+//
+//    public LazyOptional<ItemStackCableStorage> getItemHandler() {
+//        return getCapabilityHandler(ForgeCapabilities.ITEM_HANDLER).cast();
+//    }
+
+    private void populateSubnet(IPipe updateFrom) {
+        System.out.println("Repopulating");
+        if (getTickingTile().getAsBlockEntity().getLevel() != null) {
+            this.subNetworks.clear();
+            this.subNetworks = PipeNetworkUtil.traverseReturnAllSubnets2(this);
+
+            for (IPipe pipe : this.subNetworks.keySet()) {
+                pipe.getAsBlockEntity().getCapabilitiesInstances().forEach((capability, instance) -> {
+                    for (IPipe iPipe : this.network) {
+                        if (iPipe == pipe) continue;
+                        iPipe.getAsBlockEntity().getCapabilitiesInstances().forEach((capability2, instance2) -> {
+                            instance.merge(instance2);
+                        });
+                    }
+                });
+            }
+
+//            capabilitiesInstances.forEach((capability, capability2) -> {
+//                capabilityMap.get(capability).invalidate();
+//                capabilityMap.put(capability, LazyOptional.of(() -> capability2.updateFrom()));
+//            });
+
+        }
+//        this.network.forEach(pipe -> {
+//            pipe.findCapabilityHolders();
+//            if (pipe.getAsBlockEntity().hasCachedInventories()) subNetworks.add(pipe);
+//        });
     }
 
-    public void removeInvalidSubnetsWithoutTraversal() {
-        this.subNetworks.removeIf(p -> p.getAsBlockEntity().hasCachedInventories());
-    }
+//    public void removeInvalidSubnetsWithoutTraversal() {
+//        this.subNetworks.removeIf(p -> p.getAsBlockEntity().hasCachedInventories());
+//    }
 
-    public void onNetworkUpdate() {
+    public void onNetworkUpdate(IPipe updateFrom) {
         System.out.println("Network update");
         if (getTickingTile().getAsBlockEntity().getLevel() != null) {
-            //removeInvalidSubnetsWithoutTraversal();
-            populateSubnet();
+            populateSubnet(updateFrom);
         }
     }
 
-    private boolean hasSameSubtypes(IPipe pipe) {
+    private boolean hasSameSubtypes(IPipe pipe, IPipe pipe2) {
 
-        if (pipe.getSubtypes().size() != subTypes.size()) return false;
-
-        int count = subTypes.size();
-
-        for (PipeTypes subtype : pipe.getSubtypes()) {
-            for (PipeTypes managerTypes : getSubTypes()) {
-                if (subtype == managerTypes) count--;
+        for (PipeTypes subtype : pipe2.getSubtypes()) {
+            for (PipeTypes managerTypes : pipe.getSubtypes()) {
+                if (subtype == managerTypes)
+                    return true;
             }
         }
 
-        return count == 0;
+        return false;
 
     }
 
     public void attemptConnectionFrom(IPipe inNetwork, IPipe connectingPipe) {
 
-        if (hasSameSubtypes(connectingPipe)) {
+        if (hasSameSubtypes(inNetwork, connectingPipe)) {
             merge(connectingPipe);
         }
 
-        onNetworkUpdate();
+
     }
 
     private void merge(IPipe mergingPipe) {
@@ -226,38 +325,39 @@ public class PipeManager {
 
         for (IPipe pipe : mergingPipe.getManager().getNetwork()) {
             attach(pipe);
-            pipe.findCapabilityHolders();
         }
 
         dataMerge(old);
 
-        onNetworkUpdate();
+        this.getSubTypes().addAll(old.subTypes);
 
     }
 
     private void dataMerge(PipeManager oldManager) {
-        oldManager.capabilitiesInstances.forEach((capability, instance) -> {
+        for (IPipe pipe : this.subNetworks.keySet()) {
+            pipe.getAsBlockEntity().getCapabilitiesInstances().forEach((capability, instance) -> {
             System.out.println("Merging " + capability.getName());
-            capabilitiesInstances.get(capability).merge(instance);
+                for (IPipe iPipe : oldManager.subNetworks.keySet()) {
+                    iPipe.getAsBlockEntity().getCapabilitiesInstances().get(capability).merge(instance);
+                }
         });
+        }
     }
 
     private void invalidate() {
         this.network.clear();
-        for (LazyOptional<?> optional : capabilityMap.values()) {
-            if (optional != null) {
-                optional.invalidate();
-            }
-        }
-        onNetworkUpdate();
+//        for (LazyOptional<?> optional : capabilityMap.values()) {
+//            if (optional != null) {
+//                optional.invalidate();
+//            }
+//        }
     }
 
     public void attach(IPipe pipe) {
-
         this.network.add(pipe);
         pipe.setManager(this);
+        this.subTypes.addAll(pipe.getSubtypes());
 
-        onNetworkUpdate();
     }
 
     public void detach(IPipe toDetach) {
@@ -275,7 +375,6 @@ public class PipeManager {
         separateCapabilityCaches(managers);
 
         invalidate();
-        onNetworkUpdate();
     }
 
     public PipeManager separateNetworks(IPipe startFrom) {
@@ -288,22 +387,22 @@ public class PipeManager {
             separatedManager.attach(pipe);
         }
 
-        separatedManager.onNetworkUpdate();
+//        separatedManager.onNetworkUpdate();
         return separatedManager;
     }
 
     private void separateCapabilityCaches(List<PipeManager> managers) {
         int networkCount = managers.size();
         for (PipeManager pipeManager : managers) {
-            // split energy and fluids up
+            // divide energy and fluids up
 
-            Optional<Integer> energy = getEnergyHandler().map(EnergyStorage::getEnergyStored);
-            if (energy.isPresent()) {
-                int toReceive = energy.get() / networkCount;
-                pipeManager.getEnergyHandler().ifPresent(handler -> handler.receiveEnergy(toReceive, false));
-                getEnergyHandler().ifPresent(h -> h.useEnergy(toReceive));
-                networkCount--;
-            }
+//            Optional<Integer> energy = getEnergyHandler().map(EnergyStorage::getEnergyStored);
+//            if (energy.isPresent()) {
+//                int toReceive = energy.get() / networkCount;
+//                pipeManager.getEnergyHandler().ifPresent(handler -> handler.receiveEnergy(toReceive, false));
+//                getEnergyHandler().ifPresent(h -> h.useEnergy(toReceive));
+//                networkCount--;
+//            }
 
 
             // just drop items.
@@ -311,56 +410,27 @@ public class PipeManager {
 
     }
 
-    public @NotNull LazyOptional<?> getCapability(@NotNull Capability<?> cap) {
-        boolean match = false;
-        for (PipeTypes type : this.subTypes) {
-            if (cap == type.getCap()) {
-                match = true;
+    public @NotNull LazyOptional<?> getCapability(MultirolePipe pipe, PipeTypes types) {
+        for (Map.Entry<IPipe, Map<PipeTypes, List<IPipe>>> entry : this.subNetworks.entrySet()) {
+            Map<PipeTypes, List<IPipe>> map = entry.getValue();
+            if (map.get(types) != null) {
+                if (map.get(types).contains(pipe)) {
+                    return entry.getKey().getAsBlockEntity().getCapabilityHandler(types.getCap());
+                }
             }
         }
-        if (!match) return LazyOptional.empty();
-        return getCapabilityHandler(cap);
+        return LazyOptional.empty();
     }
 
     public boolean hasCapability(@NotNull Capability<?> cap) {
         return subTypes.stream().anyMatch(types -> types.getCap() == cap);
     }
 
-    public LazyOptional<?> getCapabilityHandler(Capability<?> cap) {
-        return capabilityMap.computeIfAbsent(cap, capability -> {
-            System.out.println("Computing a new " + capability.getName() + " instance for " + this.manager.getAsBlockEntity().getBlockPos().toShortString());
-            return LazyOptional.of(() -> capabilitiesInstances.get(capability));
-        });
-    }
-
-    private CompoundTag saveCapabilitiesToNBT() {
-        CompoundTag tag = new CompoundTag();
-        ListTag list = new ListTag();
-        capabilitiesInstances.forEach((capability, instance) -> {
-            CompoundTag tag1 = new CompoundTag();
-            tag1.put(capability.getName().toLowerCase(), instance.serialize());
-            list.add(tag1);
-        });
-        tag.put("capabilities", list);
-        return tag;
-    }
-
-    private void readCapabilitiesFromNBT(CompoundTag tag) {
-        ListTag list = tag.getList("capabilities", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag tag1 = list.getCompound(i);
-            capabilitiesInstances.forEach((capability, instance) -> {
-                System.out.println("Deserializing capability: " + capability.getName());
-                instance.deserialize(tag1.getCompound(capability.getName().toLowerCase()));
-            });
-        }
-    }
 
     public CompoundTag write() {
         CompoundTag tag = new CompoundTag();
         tag.put("managerPos", NbtUtils.writeBlockPos(getTickingTile().getAsBlockEntity().getBlockPos()));
         tag.put("network", savePositions());
-        // tag.put("handlers", saveCapabilitiesToNBT());
         return tag;
     }
 
@@ -373,7 +443,6 @@ public class PipeManager {
 
     public void read(CompoundTag tag) {
         readPositionsFromTag(tag);
-        readCapabilitiesFromNBT(tag.getCompound("handlers"));
     }
 
     private CompoundTag savePositions() {
@@ -400,6 +469,10 @@ public class PipeManager {
                         attach(pipe);
                     }
                 }
+
+                onNetworkUpdate(manager);
+
+
             }
         }
     }
@@ -408,7 +481,7 @@ public class PipeManager {
         return network;
     }
 
-    public HashSet<IPipe> getSubNetworks() {
+    public Map<IPipe, Map<PipeTypes, List<IPipe>>> getSubNetworks() {
         return subNetworks;
     }
 

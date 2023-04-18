@@ -1,8 +1,13 @@
 package mod.kerzox.dispatch.common.capability;
 
 import mod.kerzox.dispatch.common.entity.manager.IDispatchCapability;
+import mod.kerzox.dispatch.common.util.IPipe;
+import mod.kerzox.dispatch.common.util.PipeTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.energy.EnergyStorage;
+
+import java.util.List;
+import java.util.Map;
 
 public class EnergyCableStorage extends EnergyStorage implements IDispatchCapability {
 
@@ -44,8 +49,18 @@ public class EnergyCableStorage extends EnergyStorage implements IDispatchCapabi
     @Override
     public void merge(IDispatchCapability capability) {
         if (capability instanceof EnergyCableStorage storage) {
-            this.addEnergy(storage.getEnergyStored());
+            this.addEnergy(storage.extractEnergy(storage.getEnergyStored(), false));
         }
+    }
+
+    @Override
+    public IDispatchCapability updateFrom(Map<IPipe, Map<PipeTypes, List<IPipe>>> subNetworks) {
+        return null;
+    }
+
+    @Override
+    public void clear() {
+        this.energy = 0;
     }
 
 }

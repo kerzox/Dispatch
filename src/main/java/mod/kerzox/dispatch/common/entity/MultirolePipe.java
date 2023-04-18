@@ -1,9 +1,11 @@
 package mod.kerzox.dispatch.common.entity;
 
-import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.common.block.multi.MultirolePipeBlock;
+import mod.kerzox.dispatch.common.capability.EnergyCableStorage;
+import mod.kerzox.dispatch.common.capability.FluidCableStorage;
+import mod.kerzox.dispatch.common.capability.ItemStackCableStorage;
+import mod.kerzox.dispatch.common.entity.manager.IDispatchCapability;
 import mod.kerzox.dispatch.common.entity.manager.PipeManager;
-import mod.kerzox.dispatch.common.entity.manager.PipeNetworkUtil;
 import mod.kerzox.dispatch.common.util.IPipe;
 import mod.kerzox.dispatch.common.util.IServerTickable;
 import mod.kerzox.dispatch.common.util.PipeSettings;
@@ -21,19 +23,16 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.EnergyStorage;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTickable {
 
@@ -61,6 +60,16 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
         put(Direction.DOWN, new HashMap<>());
     }};
 
+    protected Map<Capability<?>, IDispatchCapability> capabilitiesInstances = new HashMap<>() {
+        {
+            put(ForgeCapabilities.ENERGY, new EnergyCableStorage(100));
+            put(ForgeCapabilities.ITEM_HANDLER, new ItemStackCableStorage(1));
+            put(ForgeCapabilities.FLUID_HANDLER, new FluidCableStorage(1000));
+        }
+    };
+
+    protected Map<Capability<?>, LazyOptional<?>> capabilityMap = new HashMap<>();
+
     public MultirolePipe(BlockPos pPos, BlockState pBlockState) {
         super(DispatchRegistry.BlockEntities.MULTIROLE_PIPE.get(), pPos, pBlockState);
     }
@@ -69,6 +78,7 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
     public void onServer() {
         if (getManager() != null && getManager().getTickingTile() == this) {
             getManager().tick();
+
         }
         if (getSetting() == PipeSettings.PULL) {
             for (PipeTypes subtype : getSubtypes()) {
@@ -110,21 +120,28 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
 
     @Override
     public void findCapabilityHolders() {
-        if (level != null) {
-            clearConnections();
+        if (level != null && getManager() != null) {
+            //clearConnections();
             for (PipeTypes subtype : getSubtypes()) {
                 for (Direction direction : Direction.values()) {
                     BlockEntity entity = level.getBlockEntity(worldPosition.relative(direction));
                     if (entity instanceof MultirolePipe pipe) {
+                        // ignore pipes that are exactly the same as it means we will probably merge with them later on
+                        for (PipeTypes pipeTypes : pipe.getSubtypes()) {
+                            if (!this.getSubtypes().contains(pipeTypes)) continue;
+                        }
+
                         if (getManager().getNetwork().contains(pipe)) {
                             if (pipe.getManager().getNetwork().contains(this)) {
                                 connBlockEntities.get(direction).put(subtype.getCap(), null);
                             }
                             continue;
                         };
-                        System.out.println("new listener");
+                        LazyOptional<?> temp = connBlockEntities.get(direction).get(subtype.getCap());
                         LazyOptional<?> capability = entity.getCapability(subtype.getCap(), direction.getOpposite());
+                        if (temp != null && temp.isPresent() && temp == capability) continue;
                         if (capability.isPresent()) {
+                            System.out.println("new listener");
                             connBlockEntities.get(direction).put(subtype.getCap(), capability);
                             capability.addListener(self -> onCapabilityInvalidation(subtype.getCap(), self, direction));
                         }
@@ -151,7 +168,6 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
 
     protected void onCapabilityInvalidation(Capability<?> capability, LazyOptional<?> self, Direction direction) {
         getCachedByDirection(direction).put(capability, null);
-        getManager().onNetworkUpdate();
     }
 
     @Override
@@ -185,7 +201,6 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
             }
         }
         if (getManager() == null) createManager();
-        this.getManager().onNetworkUpdate();
         doVisualConnections();
         getManager().addToUpdateQueue(this);
     }
@@ -230,6 +245,7 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
         for (Map.Entry<Direction, Map<Capability<?>, LazyOptional<?>>> mapEntry : connBlockEntities.entrySet()) {
             for (Map.Entry<Capability<?>, LazyOptional<?>> capabilityLazyOptionalEntry : mapEntry.getValue().entrySet()) {
                 if (capabilityLazyOptionalEntry.getKey() == capability && capabilityLazyOptionalEntry.getValue() != null) {
+                    if (capabilityLazyOptionalEntry.getValue().resolve().get() instanceof IDispatchCapability) continue;
                     map.put(mapEntry.getKey(), capabilityLazyOptionalEntry.getValue());
                 }
             }
@@ -257,11 +273,34 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
         return map;
     }
 
+    public LazyOptional<EnergyCableStorage> getEnergyHandler() {
+        return getCapabilityHandler(ForgeCapabilities.ENERGY).cast();
+    }
+
+    public LazyOptional<FluidCableStorage> getFluidHandler() {
+        return getCapabilityHandler(ForgeCapabilities.FLUID_HANDLER).cast();
+    }
+
+    public LazyOptional<ItemStackCableStorage> getItemHandler() {
+        return getCapabilityHandler(ForgeCapabilities.ITEM_HANDLER).cast();
+    }
+
+    public LazyOptional<?> getCapabilityHandler(Capability<?> cap) {
+        return capabilityMap.computeIfAbsent(cap, capability -> {
+            System.out.println("Computing a new " + capability.getName() + " instance for " + this.getBlockPos().toShortString());
+            return LazyOptional.of(() -> capabilitiesInstances.get(capability));
+        });
+    }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (getManager() == null) return super.getCapability(cap, side);
-        return getManager().getCapability(cap).cast();
+        for (PipeTypes subtype : getSubtypes()) {
+            if (subtype.getCap() == cap) {
+                return getManager().getCapability(this, subtype).cast();
+            }
+        }
+        return super.getCapability(cap, side);
     }
 
     @Override
@@ -282,7 +321,6 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
             pPlayer.sendSystemMessage(Component.literal("Pipe Setting" + getSetting()));
             pPlayer.sendSystemMessage(Component.literal("Manager Pos: " + getManager().getTickingTile().getAsBlockEntity().getBlockPos().toShortString()));
             pPlayer.sendSystemMessage(Component.literal("Network Size: " + getManager().getNetwork().size()));
-            pPlayer.sendSystemMessage(Component.literal("Subnets: " + getManager().getSubNetworks().size()));
 
             visuallyConnected.entrySet().stream().filter(Map.Entry::getValue).forEach(directionBlockEntityEntry ->  pPlayer.sendSystemMessage(Component.literal("Connected in " + directionBlockEntityEntry.getKey())));
 
@@ -292,39 +330,59 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
             }
 
             pPlayer.sendSystemMessage(Component.literal("Connections on this pipe: " + connections));
+            pPlayer.sendSystemMessage(Component.literal("Items: " + getItemHandler().map(c -> c.getStackInSlot(0))));
+            pPlayer.sendSystemMessage(Component.literal("Energy: " + getEnergyHandler().map(c -> c.getEnergyStored())));
 
-            if (getManager().hasCapability(ForgeCapabilities.ENERGY)) {
-                pPlayer.sendSystemMessage(Component.literal("Energy Stored: " + getManager().getEnergyHandler().map(EnergyStorage::getEnergyStored)));
-                int total = 0;
-                for (IPipe pipe : getManager().getSubNetworks()) {
-                    if (pipe instanceof MultirolePipe multirolePipe) {
-                        total += multirolePipe.countCachedByCapabilities(ForgeCapabilities.ENERGY);
+            if (getManager().getSubNetworks().get(this) != null) {
+                for (PipeTypes subtype : this.getManager().getSubTypes()) {
+                    if(getManager().getSubNetworks().get(this).get(subtype) != null) {
+                        AtomicInteger total = new AtomicInteger(0);
+                        for (IPipe pipe : getManager().getSubNetworks().get(this).get(subtype)) {
+                            pipe.getAsBlockEntity().getConnBlockEntities().forEach((direction, capabilityLazyOptionalMap) -> {
+                                if (capabilityLazyOptionalMap != null) {
+                                    if (capabilityLazyOptionalMap.get(subtype.getCap()) != null) {
+                                        total.addAndGet(1);
+                                    }
+                                }
+                            });
+                        }
+                        pPlayer.sendSystemMessage(Component.literal(subtype.getSerializedName() + " --> total connections: " + total));
                     }
                 }
-                pPlayer.sendSystemMessage(Component.literal(" --> Subnet connections: " + total));
             }
-
-            if (getManager().hasCapability(ForgeCapabilities.ITEM_HANDLER)) {
-                pPlayer.sendSystemMessage(Component.literal("Items Stored: " + getManager().getItemHandler().map(h -> h.getStackInSlot(0))));
-                int total = 0;
-                for (IPipe pipe : getManager().getSubNetworks()) {
-                    if (pipe instanceof MultirolePipe multirolePipe) {
-                        total += multirolePipe.countCachedByCapabilities(ForgeCapabilities.ITEM_HANDLER);
-                    }
-                }
-                pPlayer.sendSystemMessage(Component.literal(" --> Subnet connections: " + total));
-            }
-
-            if (getManager().hasCapability(ForgeCapabilities.FLUID_HANDLER)) {
-                pPlayer.sendSystemMessage(Component.literal("Fluid Stored: " + getManager().getFluidHandler().map(fluidCableStorage -> fluidCableStorage.getFluid().getTranslationKey())));
-                int total = 0;
-                for (IPipe pipe : getManager().getSubNetworks()) {
-                    if (pipe instanceof MultirolePipe multirolePipe) {
-                        total += multirolePipe.countCachedByCapabilities(ForgeCapabilities.FLUID_HANDLER);
-                    }
-                }
-                pPlayer.sendSystemMessage(Component.literal(" --> Subnet connections: " + total));
-            }
+//
+//            if (getManager().hasCapability(ForgeCapabilities.ENERGY)) {
+//                pPlayer.sendSystemMessage(Component.literal("Energy Stored: " + getManager().getEnergyHandler().map(EnergyStorage::getEnergyStored)));
+//                int total = 0;
+//                for (IPipe pipe : getManager().getSubNetworks().get(PipeTypes.ENERGY)) {
+//                    if (pipe instanceof MultirolePipe multirolePipe) {
+//                        total += multirolePipe.countCachedByCapabilities(ForgeCapabilities.ENERGY);
+//                    }
+//                }
+//                pPlayer.sendSystemMessage(Component.literal(" --> Subnet connections: " + total));
+//            }
+//
+//            if (getManager().hasCapability(ForgeCapabilities.ITEM_HANDLER)) {
+//                pPlayer.sendSystemMessage(Component.literal("Items Stored: " + getManager().getItemHandler().map(h -> h.getStackInSlot(0))));
+//                int total = 0;
+//                for (IPipe pipe : getManager().getSubNetworks().get(PipeTypes.ITEM)) {
+//                    if (pipe instanceof MultirolePipe multirolePipe) {
+//                        total += multirolePipe.countCachedByCapabilities(ForgeCapabilities.ITEM_HANDLER);
+//                    }
+//                }
+//                pPlayer.sendSystemMessage(Component.literal(" --> Subnet connections: " + total));
+//            }
+//
+//            if (getManager().hasCapability(ForgeCapabilities.FLUID_HANDLER)) {
+//                pPlayer.sendSystemMessage(Component.literal("Fluid Stored: " + getManager().getFluidHandler().map(fluidCableStorage -> fluidCableStorage.getFluid().getTranslationKey())));
+//                int total = 0;
+//                for (IPipe pipe : getManager().getSubNetworks().get(PipeTypes.FLUID)) {
+//                    if (pipe instanceof MultirolePipe multirolePipe) {
+//                        total += multirolePipe.countCachedByCapabilities(ForgeCapabilities.FLUID_HANDLER);
+//                    }
+//                }
+//                pPlayer.sendSystemMessage(Component.literal(" --> Subnet connections: " + total));
+//            }
 
 //            pPlayer.sendSystemMessage(Component.literal("Sub types: "));
 //            for (PipeTypes type : getManager().getSubTypes()) {
@@ -332,7 +390,7 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
 //            }
 
             if (pPlayer.isShiftKeyDown()) {
-                getManager().onNetworkUpdate();
+                getManager().onNetworkUpdate(this);
                 if (pLevel.getBlockState(pPos).getBlock() instanceof MultirolePipeBlock multirolePipeBlock) {
                     multirolePipeBlock.updateVoxel();
                 }
@@ -360,26 +418,45 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
         }
     }
 
+    public Map<Capability<?>, IDispatchCapability> getCapabilitiesInstances() {
+        return capabilitiesInstances;
+    }
+
     @Override
     protected void write(CompoundTag pTag) {
-        CompoundTag tag = new CompoundTag();
-        tag.put("managerData", getManager().write());
-        ListTag list = new ListTag();
-        for (PipeTypes subtype : getSubtypes()) {
-            CompoundTag tag1 = new CompoundTag();
-            tag1.putString("subtype", subtype.getSerializedName());
-            list.add(tag1);
+        if (getManager() != null) {
+            CompoundTag tag = new CompoundTag();
+            tag.put("managerData", getManager().write());
+            ListTag list = new ListTag();
+            for (PipeTypes subtype : getSubtypes()) {
+                CompoundTag tag1 = new CompoundTag();
+                tag1.putString("subtype", subtype.getSerializedName());
+                list.add(tag1);
+            }
+            ListTag list2 = new ListTag();
+            getVisualConnectionMap().forEach((direction, aBoolean) -> {
+                CompoundTag tag1 = new CompoundTag();
+                tag1.putString("direction", direction.getSerializedName());
+                tag1.putBoolean("status", aBoolean);
+                list2.add(tag1);
+            });
+            tag.put("connections", list2);
+            tag.put("pipeTypes", list);
+            pTag.put("pipe", tag);
+            saveCaps(tag);
         }
-        ListTag list2 = new ListTag();
-        getVisualConnectionMap().forEach((direction, aBoolean) -> {
-            CompoundTag tag1 = new CompoundTag();
-            tag1.putString("direction", direction.getSerializedName());
-            tag1.putBoolean("status", aBoolean);
-            list2.add(tag1);
+    }
+
+    private void saveCaps(CompoundTag tag) {
+        this.getCapabilitiesInstances().forEach((capability, instance) -> {
+            tag.put(capability.getName().toLowerCase(), instance.serialize());
         });
-        tag.put("connections", list2);
-        tag.put("pipeTypes", list);
-        pTag.put("pipe", tag);
+    }
+
+    private void readCaps(CompoundTag tag) {
+        this.getCapabilitiesInstances().forEach((capability, instance) -> {
+            instance.deserialize(tag.getCompound(capability.getName().toLowerCase()));
+        });
     }
 
     @Override
@@ -399,6 +476,7 @@ public class MultirolePipe extends BasicBlockEntity implements IPipe, IServerTic
                boolean connected = tag1.getBoolean("status");
                addVisualConnection(direction, connected);
            }
+           readCaps(tag);
        }
     }
 
