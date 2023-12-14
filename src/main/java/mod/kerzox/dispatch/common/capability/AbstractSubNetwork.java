@@ -29,23 +29,31 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
 
     public abstract void tick();
 
+
+    /**
+     * Called when a block is placed/destroyed next to a node and during attach and detach
+     */
+
+    public void update() {
+
+    }
+
     public void attach(LevelNode pos) {
-        preAttachment(pos.getPos());
-        this.nodes.addNode(pos);
-        postAttachment(pos.getPos());
+        attach(pos.getPos());
     }
 
     public void attach(BlockPos pos) {
         preAttachment(pos);
         this.nodes.addByPosition(pos);
-
         postAttachment(pos);
+        update();
     }
 
     public void detach(BlockPos pos) {
         preDetachment(pos);
         this.nodes.removeNodeByPosition(pos);
         postDetachment(pos);
+        update();
     }
 
     protected void preAttachment(BlockPos pos) {
@@ -106,6 +114,7 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
     }
 
     private void readPositionsFromTag(CompoundTag tag) {
+        nodes.getNodes().clear();
         if (tag.contains("nodes")) {
             ListTag list = tag.getList("nodes", Tag.TAG_COMPOUND);
             for (int i = 0; i < list.size(); i++) {
@@ -124,4 +133,5 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
     public abstract <T> LazyOptional<T> getHandler(Direction side);
 
     public abstract void mergeData(AbstractSubNetwork network);
+
 }

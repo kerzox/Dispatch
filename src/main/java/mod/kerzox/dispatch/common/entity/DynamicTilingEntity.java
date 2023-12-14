@@ -72,8 +72,8 @@ public class DynamicTilingEntity extends SyncBlockEntity {
         LazyOptional<ILevelNetwork> levelNetworkLazyOptional = level.getCapability(NetworkHandler.NETWORK);
         if (levelNetworkLazyOptional.resolve().isPresent()) {
             if (levelNetworkLazyOptional.resolve().get() instanceof NetworkHandler handler) {
-                AbstractSubNetwork subNetwork = handler.getSubnetFromPos(cap, LevelNode.of(worldPosition));
-                if (subNetwork != null) return subNetwork.getHandler(side);
+                Optional<AbstractSubNetwork> subNetwork = handler.getSubnetFromPos(cap, LevelNode.of(worldPosition));
+                if (subNetwork.isPresent()) return subNetwork.get().getHandler(side);
             }
         }
 

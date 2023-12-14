@@ -73,7 +73,7 @@ public class DispatchBlock extends Block implements EntityBlock {
                                 }
                             }
 
-                            if (network.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pPos.relative(direction))) != null) {
+                            if (network.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pPos.relative(direction))).isPresent()) {
                                 notified.addVisualConnection(direction);
                             }
 

@@ -9,6 +9,7 @@ import mod.kerzox.dispatch.common.capability.NetworkHandler;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraftforge.event.level.BlockEvent;
@@ -114,6 +115,7 @@ public class CommonEvents {
         BlockPos pos = event.getPos();
 
         if (levelAcc instanceof Level level) {
+
             level.getCapability(NetworkHandler.NETWORK).ifPresent(cap -> {
                 if (cap instanceof NetworkHandler levelNetwork) {
 
@@ -124,8 +126,37 @@ public class CommonEvents {
 
                     // spawn block entity
                     levelNetwork.addToSpawnInWorld(pos);
+
+
+
                 }
             });
+
+            for (Direction direction : Direction.values()) {
+                level.getCapability(NetworkHandler.NETWORK).map(h->h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
+                    for (AbstractSubNetwork subNetwork : abstractSubNetworks) {
+                        if (subNetwork != null) subNetwork.update();
+                    }
+                });
+            }
+        }
+
+    }
+
+    @SubscribeEvent
+    public void onBlockPlaced(BlockEvent.EntityPlaceEvent event) {
+        LevelAccessor levelAcc = event.getLevel();
+        BlockPos pos = event.getPos();
+
+        if (levelAcc instanceof Level level) {
+
+            for (Direction direction : Direction.values()) {
+                level.getCapability(NetworkHandler.NETWORK).map(h->h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
+                    for (AbstractSubNetwork subNetwork : abstractSubNetworks) {
+                        subNetwork.update();
+                    }
+                });
+            }
         }
 
     }

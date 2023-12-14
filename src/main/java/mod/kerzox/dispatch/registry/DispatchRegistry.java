@@ -145,8 +145,7 @@ public class DispatchRegistry {
                             ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
                                 Player player = ctx.getPlayer();
                                 if (capability instanceof NetworkHandler handler) {
-                                    AbstractSubNetwork network1 = handler.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(ctx.getClickedPos()));
-                                    if (network1 == null) {
+                                    handler.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(ctx.getClickedPos())).ifPresent(subNetwork -> {
                                         handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ENERGY, ctx.getClickedPos(), true);
                                         for (Direction direction : Direction.values()) {
                                             BlockPos pos = ctx.getClickedPos().relative(direction);
@@ -157,7 +156,7 @@ public class DispatchRegistry {
                                                 }
                                             }
                                         }
-                                    }
+                                    });
                                 }
                             });
                         }
@@ -188,8 +187,7 @@ public class DispatchRegistry {
                             ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
                                 Player player = ctx.getPlayer();
                                 if (capability instanceof NetworkHandler handler) {
-                                    AbstractSubNetwork network1 = handler.getSubnetFromPos(ForgeCapabilities.ITEM_HANDLER, LevelNode.of(ctx.getClickedPos()));
-                                    if (network1 == null) {
+                                    handler.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(ctx.getClickedPos())).ifPresent(subNetwork -> {
                                         handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ITEM_HANDLER, ctx.getClickedPos(), true);
                                         for (Direction direction : Direction.values()) {
                                             BlockPos pos = ctx.getClickedPos().relative(direction);
@@ -200,7 +198,7 @@ public class DispatchRegistry {
                                                 }
                                             }
                                         }
-                                    }
+                                    });
                                 }
                             });
                         }
