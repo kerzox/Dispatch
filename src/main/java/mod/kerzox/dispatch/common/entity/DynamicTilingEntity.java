@@ -58,6 +58,8 @@ public class DynamicTilingEntity extends SyncBlockEntity {
                     for (AbstractSubNetwork subNetwork : networkHandler.getSubnetsFrom(LevelNode.of(pPos))) {
                         pPlayer.sendSystemMessage(Component.literal("Network: " + subNetwork));
                         pPlayer.sendSystemMessage(Component.literal("Network size: " + subNetwork.getNodes().size()));
+                        //pPlayer.sendSystemMessage(Component.literal("Tag: " + subNetwork.serializeNBT()));
+                        System.out.println(subNetwork.serializeNBT());
                     }
                 }
             });

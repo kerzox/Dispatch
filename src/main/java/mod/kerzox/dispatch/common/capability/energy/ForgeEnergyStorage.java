@@ -150,6 +150,12 @@ public class ForgeEnergyStorage implements IEnergyStorage, INBTSerializable<Tag>
         this.energy += Math.min(capacity - energy, amount);
     }
 
+    public long addEnergyWithReturn(long amount) {
+        long energyReceived = Math.min(capacity - energy, amount);
+        addEnergy(energyReceived);
+        return energyReceived;
+    }
+
     public void consumeEnergy(long amount) {
         energy -= Math.min(amount, energy);
     }
@@ -167,7 +173,7 @@ public class ForgeEnergyStorage implements IEnergyStorage, INBTSerializable<Tag>
     }
 
     public void read(CompoundTag tag) {
-        this.energy = tag.getInt("energy");
+        this.energy = tag.getLong("energy");
     }
 
 

@@ -25,14 +25,25 @@ public class ItemSubNetwork extends AbstractSubNetwork {
     }
 
     @Override
+    protected CompoundTag write() {
+        return new CompoundTag();
+    }
+
+    @Override
+    protected void read(CompoundTag tag) {
+
+    }
+
+    @Override
     public <T> LazyOptional<T> getHandler(Direction side) {
         return handlerLazyOptional.cast();
     }
 
     @Override
-    public void mergeData(CompoundTag serializeNBT) {
+    public void mergeData(AbstractSubNetwork network) {
 
     }
+
 
     @Override
     public int getRenderingColour() {

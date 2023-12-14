@@ -84,6 +84,9 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
         return nodes.hasPosition(node);
     }
 
+    protected abstract CompoundTag write();
+    protected abstract void read(CompoundTag tag);
+
     @Override
     public CompoundTag serializeNBT() {
         CompoundTag tag = new CompoundTag();
@@ -92,12 +95,14 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
             list.add(node.serialize());
         });
         tag.put("nodes", list);
+        tag.put("data", write());
         return tag;
     }
 
     @Override
     public void deserializeNBT(CompoundTag tag) {
         readPositionsFromTag(tag);
+        read(tag.getCompound("data"));
     }
 
     private void readPositionsFromTag(CompoundTag tag) {
@@ -118,5 +123,5 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
 
     public abstract <T> LazyOptional<T> getHandler(Direction side);
 
-    public abstract void mergeData(CompoundTag serializeNBT);
+    public abstract void mergeData(AbstractSubNetwork network);
 }

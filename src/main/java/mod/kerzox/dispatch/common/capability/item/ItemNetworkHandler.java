@@ -4,6 +4,8 @@ import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
+import java.util.List;
+
 public class ItemNetworkHandler extends AbstractNetwork<ItemSubNetwork> {
 
     public ItemNetworkHandler(Level level) {
@@ -12,6 +14,11 @@ public class ItemNetworkHandler extends AbstractNetwork<ItemSubNetwork> {
 
     @Override
     protected void tick() {
+
+    }
+
+    @Override
+    protected void splitData(ItemSubNetwork modifyingNetwork, List<ItemSubNetwork> newNetworks) {
 
     }
 

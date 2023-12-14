@@ -30,6 +30,24 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     }
 
     @Override
+    protected void postAttachment(BlockPos pos) {
+        // change capacity based on number of cables
+        storage.capacity = nodes.size() * 1000L;
+    }
+
+    @Override
+    protected CompoundTag write() {
+        CompoundTag tag = new CompoundTag();
+        tag.put("energy", this.storage.serializeNBT());
+        return tag;
+    }
+
+    @Override
+    protected void read(CompoundTag tag) {
+        this.storage.read(tag);
+    }
+
+    @Override
     public int getRenderingColour() {
         return 0x00ff61;
     }
@@ -39,8 +57,14 @@ public class EnergySubNetwork extends AbstractSubNetwork {
         return handler.cast();
     }
 
+    public ForgeEnergyStorage getStorage() {
+        return storage;
+    }
+
     @Override
-    public void mergeData(CompoundTag serializeNBT) {
-        System.out.println(serializeNBT);
+    public void mergeData(AbstractSubNetwork network) {
+        if (network instanceof EnergySubNetwork subNetwork) {
+            this.storage.addEnergy(subNetwork.storage.energy);
+        }
     }
 }

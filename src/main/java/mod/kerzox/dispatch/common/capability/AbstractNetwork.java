@@ -6,8 +6,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.util.INBTSerializable;
 
 import java.util.*;
@@ -93,11 +91,11 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
                         if (network != individualNetwork) {
                             //TODO this is where data should be transferred into next one
 
-                            individualNetwork.mergeData(network.serializeNBT());
-
                             for (LevelNode node : network.getNodes()) {
                                 individualNetwork.attach(node);
                             }
+
+                            if (!toRemove.contains(network)) individualNetwork.mergeData(network);
 
                             markNetworkForDeletion(network);
                         }
@@ -156,12 +154,22 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
                 newNetworks.add(separateNetworks(modifyingNetwork, neighbour));
             }
         }
+
+        splitData(modifyingNetwork, newNetworks);
+
         // remove the subnet
         getSubNetworks().remove(modifyingNetwork);
 
         // add the new ones
         getSubNetworks().addAll(newNetworks);
     }
+
+    /**
+     * Split data between networks
+     * @param modifyingNetwork
+     * @param newNetworks list of newly created networks
+     */
+    protected abstract void splitData(T modifyingNetwork, List<T> newNetworks);
 
     /**
      * Separate networks uses a DFS to find all positions connected from the starting position (starting node in DFS) and creates a new subnet
