@@ -1,7 +1,9 @@
 package mod.kerzox.dispatch;
 
+import mod.kerzox.dispatch.client.RenderLevelNetworks;
 import mod.kerzox.dispatch.client.render.MultiroleCableRenderer;
-import net.minecraft.client.gui.screens.MenuScreens;
+import mod.kerzox.dispatch.registry.DispatchRegistry;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -15,14 +17,16 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onModelRegister(ModelEvent.RegisterAdditional event) {
-        System.out.println("Adding model to registry");
         event.register(MultiroleCableRenderer.CONNECTED);
         event.register(MultiroleCableRenderer.CONNECTED_BIG);
         event.register(MultiroleCableRenderer.CORE_BIG);
+        event.register(MultiroleCableRenderer.CORE);
     }
 
-
     public static void init(FMLClientSetupEvent event) {
-
+        event.enqueueWork(() -> {
+            BlockEntityRenderers.register(DispatchRegistry.BlockEntities.DISPATCH_ENTITY.get(), MultiroleCableRenderer::new);
+        });
+        MinecraftForge.EVENT_BUS.register(new RenderLevelNetworks());
     }
 }

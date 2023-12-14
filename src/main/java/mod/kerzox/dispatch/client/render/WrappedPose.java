@@ -1,8 +1,9 @@
 package mod.kerzox.dispatch.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Matrix4f;
-import com.mojang.math.Vector3f;
+import com.mojang.math.Axis;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class WrappedPose {
 
@@ -66,21 +67,15 @@ public class WrappedPose {
     }
 
     public void rotateYAroundPosition(float degrees, Vector3f position) {
-        translate(position);
-        stack.mulPose(Vector3f.YP.rotationDegrees(degrees));
-        translateNegative(position);
+        stack.rotateAround(Axis.YP.rotationDegrees(degrees), position.x, position.y, position.z);
     }
 
     public void rotateXAroundPosition(float degrees, Vector3f position) {
-        translate(position);
-        stack.mulPose(Vector3f.XP.rotationDegrees(degrees));
-        translateNegative(position);
+        stack.rotateAround(Axis.XP.rotationDegrees(degrees), position.x, position.y, position.z);
     }
 
     public void rotateZAroundPosition(float degrees, Vector3f position) {
-        translate(position);
-        stack.mulPose(Vector3f.ZP.rotationDegrees(degrees));
-        translateNegative(position);
+        stack.rotateAround(Axis.ZP.rotationDegrees(degrees), position.x, position.y, position.z);
     }
 
 

@@ -1,16 +1,19 @@
 package mod.kerzox.dispatch.registry;
 
-import mod.kerzox.dispatch.common.block.BasicEntityBlock;
-import mod.kerzox.dispatch.common.block.multi.MultiroleEnergyBlock;
-import mod.kerzox.dispatch.common.block.multi.MultiroleFluidBlock;
-import mod.kerzox.dispatch.common.block.multi.MultiroleItemBlock;
-import mod.kerzox.dispatch.common.block.multi.MultirolePipeBlock;
-import mod.kerzox.dispatch.common.entity.MultirolePipe;
-import mod.kerzox.dispatch.common.entity.Generator;
-import mod.kerzox.dispatch.common.util.PipeTypes;
+import mod.kerzox.dispatch.common.block.DispatchBlock;
+import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
+import mod.kerzox.dispatch.common.capability.LevelNode;
+import mod.kerzox.dispatch.common.capability.NetworkHandler;
+import mod.kerzox.dispatch.common.capability.energy.EnergyNetworkHandler;
+import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -23,34 +26,37 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Material;
+import net.minecraft.world.level.material.MapColor;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.energy.EnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import static mod.kerzox.dispatch.Dispatch.MODID;
-import static mod.kerzox.dispatch.registry.DispatchRegistry.Blocks.*;
+import static net.minecraftforge.versions.forge.ForgeVersion.MOD_ID;
 
 public class DispatchRegistry {
 
-    private static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
-    private static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, MODID);
-    private static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(ForgeRegistries.Keys.FLUID_TYPES, MODID);
-    private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
-    private static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
-    private static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, MODID);
-    private static final DeferredRegister<RecipeType<?>> RECIPE_TYPES = DeferredRegister.create(ForgeRegistries.RECIPE_TYPES, MODID);
-    private static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, MODID);
-    private static final DeferredRegister<MobEffect> EFFECTS = DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, MODID);
-    private static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, MODID);
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
+    public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, MODID);
+    public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(ForgeRegistries.Keys.FLUID_TYPES, MODID);
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
+    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+    public static final DeferredRegister<RecipeSerializer<?>> RECIPES = DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, MODID);
+    public static final DeferredRegister<RecipeType<?>> RECIPE_TYPES = DeferredRegister.create(ForgeRegistries.RECIPE_TYPES, MODID);
+    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, MODID);
+    public static final DeferredRegister<MobEffect> EFFECTS = DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, MODID);
+    public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, MODID);
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
     public static void init(IEventBus bus) {
         BLOCKS.register(bus);
@@ -63,15 +69,22 @@ public class DispatchRegistry {
         MENUS.register(bus);
         EFFECTS.register(bus);
         PARTICLE_TYPES.register(bus);
+        CREATIVE_MODE_TABS.register(bus);
 
-        Items.init();
         Effects.init();
         Blocks.init();
+        Items.init();
         BlockEntities.init();
         Recipes.init();
         Menus.init();
 
-   }
+    }
+
+    public static final RegistryObject<CreativeModeTab> TAB = CREATIVE_MODE_TABS.register("dispatch_tab", () -> CreativeModeTab.builder()
+            .title(Component.literal("Dispatch"))
+            .icon(() -> Items.ENERGY_CABLE_ITEM.get().getDefaultInstance())
+            .build());
+
 
     public static class Particles {
 
@@ -85,6 +98,7 @@ public class DispatchRegistry {
     public static final class Effects {
         public static void init() {
 
+
         }
 
 
@@ -92,6 +106,7 @@ public class DispatchRegistry {
 
     public static final class Menus {
         public static void init() {
+
         }
 
 
@@ -99,6 +114,7 @@ public class DispatchRegistry {
 
     public static final class Recipes {
         public static void init() {
+
         }
 
 
@@ -106,22 +122,107 @@ public class DispatchRegistry {
 
     public static final class Items {
 
-//        public static final RegistryObject<MultirolePipeBlock.Item> ENERGY_CABLE = ITEMS.register("energy_cable_item", () -> new MultirolePipeBlock.Item(new Item.Properties().tab(CreativeModeTab.TAB_MISC), PipeTypes.ENERGY));
-//        public static final RegistryObject<MultirolePipeBlock.Item> ITEM_CABLE = ITEMS.register("item_cable_item", () -> new MultirolePipeBlock.Item(new Item.Properties().tab(CreativeModeTab.TAB_MISC), PipeTypes.ITEM));
+        public static final RegistryObject<Item> ENERGY_CABLE_ITEM = ITEMS.register("dispatch_item", () ->
+                new BlockItem(Blocks.DISPATCH_BLOCK.get(), new Item.Properties()) {
+                    @Override
+                    protected boolean placeBlock(BlockPlaceContext ctx, BlockState p_40579_) {
+                        if (ctx.getPlayer().isShiftKeyDown()) return false;
+                        if (super.placeBlock(ctx, p_40579_)) {
+                            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
+                                Player player = ctx.getPlayer();
+                                if (capability instanceof NetworkHandler handler) {
+                                    handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ENERGY, ctx.getClickedPos(), true);
+                                }
+                            });
+                            return true;
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public InteractionResult useOn(UseOnContext ctx) {
+                        if (!ctx.getLevel().isClientSide && ctx.getPlayer().isShiftKeyDown()) {
+                            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
+                                Player player = ctx.getPlayer();
+                                if (capability instanceof NetworkHandler handler) {
+                                    AbstractSubNetwork network1 = handler.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(ctx.getClickedPos()));
+                                    if (network1 == null) {
+                                        handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ENERGY, ctx.getClickedPos(), true);
+                                        for (Direction direction : Direction.values()) {
+                                            BlockPos pos = ctx.getClickedPos().relative(direction);
+                                            if (ctx.getLevel().getBlockEntity(pos) instanceof DynamicTilingEntity entity) {
+                                                entity.addVisualConnection(direction.getOpposite());
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        return super.useOn(ctx);
+                    }
+                });
+
+        public static final RegistryObject<Item> ITEM_CABLE_ITEM = ITEMS.register("dispatch_2_item", () ->
+                new BlockItem(Blocks.DISPATCH_BLOCK.get(), new Item.Properties()) {
+                    @Override
+                    protected boolean placeBlock(BlockPlaceContext ctx, BlockState p_40579_) {
+                        if (ctx.getPlayer().isShiftKeyDown()) return false;
+                        if (super.placeBlock(ctx, p_40579_)) {
+                            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
+                                Player player = ctx.getPlayer();
+                                if (capability instanceof NetworkHandler handler) {
+                                    handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ITEM_HANDLER, ctx.getClickedPos(), true);
+                                }
+                            });
+                            return true;
+                        }
+                        return false;
+                    }
+
+                    @Override
+                    public InteractionResult useOn(UseOnContext ctx) {
+                        if (!ctx.getLevel().isClientSide && ctx.getPlayer().isShiftKeyDown()) {
+                            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
+                                Player player = ctx.getPlayer();
+                                if (capability instanceof NetworkHandler handler) {
+                                    AbstractSubNetwork network1 = handler.getSubnetFromPos(ForgeCapabilities.ITEM_HANDLER, LevelNode.of(ctx.getClickedPos()));
+                                    if (network1 == null) {
+                                        handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ITEM_HANDLER, ctx.getClickedPos(), true);
+                                        for (Direction direction : Direction.values()) {
+                                            BlockPos pos = ctx.getClickedPos().relative(direction);
+                                            if (ctx.getLevel().getBlockEntity(pos) instanceof DynamicTilingEntity entity) {
+                                                entity.addVisualConnection(direction.getOpposite());
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        return super.useOn(ctx);
+                    }
+                });
 
         public static void init() {
+
         }
 
- }
+    }
 
     public static final class Blocks {
 
-        public static final makeBlock<MultiroleEnergyBlock> ENERGY_CABLE_BLOCK = makeBlock.buildPipe("energy_cable_block", MultiroleEnergyBlock::new, BlockBehaviour.Properties.of(Material.GLASS).sound(SoundType.WOOL), PipeTypes.ENERGY);
-        public static final makeBlock<MultiroleItemBlock> ITEM_CABLE_BLOCK = makeBlock.buildPipe("item_cable_block", MultiroleItemBlock::new, BlockBehaviour.Properties.of(Material.GLASS).sound(SoundType.WOOL), PipeTypes.ITEM);
-        public static final makeBlock<MultiroleFluidBlock> FLUID_CABLE_BLOCK = makeBlock.buildPipe("fluid_cable_block", MultiroleFluidBlock::new, BlockBehaviour.Properties.of(Material.GLASS).sound(SoundType.WOOL), PipeTypes.FLUID);
+        public static final RegistryObject<Block> DISPATCH_BLOCK = BLOCKS.register("dispatch_block", () -> new DispatchBlock(
+                BlockBehaviour.Properties.of()
+                        .mapColor(MapColor.METAL)
+                        .noOcclusion()
+                        .instrument(NoteBlockInstrument.BASEDRUM)
+                        .strength(1.5F, 3.0F)));
 
-        public static final makeBlock<BasicEntityBlock<Generator>> ENERGY_MANIPULATOR_BLOCK = makeBlock.build("energy_gen_block", prop -> new BasicEntityBlock<Generator>(BlockEntities.ENERGY_GENERATOR.getType(),
-                BlockBehaviour.Properties.of(Material.AIR).sound(SoundType.WOOL)), BlockBehaviour.Properties.of(Material.AIR).sound(SoundType.WOOL), true);
+//        public static final RegistryObject<Block> ITEM_CABLE_BLOCK = BLOCKS.register("item_cable_block", () -> new DispatchBlock(
+//                ForgeCapabilities.ITEM_HANDLER,
+//                BlockBehaviour.Properties.of()
+//                        .mapColor(MapColor.METAL)
+//                        .instrument(NoteBlockInstrument.BASEDRUM)
+//                        .strength(1.5F, 3.0F)));
 
         public static void init() {
 
@@ -129,131 +230,17 @@ public class DispatchRegistry {
         }
 
 
-        public static class makeBlock<T extends Block> implements Supplier<T> {
-
-            public static final List<makeBlock<?>> ENTRIES = new ArrayList<>();
-
-            private final RegistryObject<T> block;
-
-            private final String name;
-
-            private makeBlock(String name, RegistryObject<T> block) {
-                this.name = name;
-                this.block = block;
-                ENTRIES.add(this);
-            }
-
-            public static <T extends Block> makeBlock<T> build(String name, Function<BlockBehaviour.Properties, T> block, BlockBehaviour.Properties prop, boolean asItem) {
-                RegistryObject<T> ret = BLOCKS.register(name, () -> block.apply(prop));
-                if (asItem)
-                    ITEMS.register(name, () -> new BlockItem(ret.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
-                return new makeBlock<>(name, ret);
-            }
-
-            public static <T extends Block> makeBlock<T> buildPipe(String name, Function<BlockBehaviour.Properties, T> block, BlockBehaviour.Properties prop, PipeTypes type) {
-                RegistryObject<T> ret = BLOCKS.register(name, () -> block.apply(prop));
-                ITEMS.register(name, () -> new PipeItem(ret.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC), type));
-                return new makeBlock<>(name, ret);
-            }
-
-            public static <T extends Block> makeBlock<T> buildCustomSuppliedItem(String name, Function<BlockBehaviour.Properties, T> block, BlockBehaviour.Properties prop, Supplier<BlockItem> itemSupplier) {
-                RegistryObject<T> ret = BLOCKS.register(name, () -> block.apply(prop));
-                ITEMS.register(name, itemSupplier);
-                return new makeBlock<>(name, ret);
-            }
-
-            @Override
-            public T get() {
-                return this.block.get();
-            }
-
-            public String getName() {
-                return name;
-            }
-
-            public static class PipeItem extends BlockItem {
-
-                private PipeTypes type;
-
-                public PipeItem(Block block, Properties pProperties, PipeTypes types) {
-                    super(block, pProperties);
-                    this.type = types;
-                }
-
-                @Override
-                protected boolean placeBlock(BlockPlaceContext pContext, BlockState pState) {
-                    if (super.placeBlock(pContext, pState)) {
-                        if (!pContext.getLevel().isClientSide) {
-                            if (pContext.getLevel().getBlockEntity(pContext.getClickedPos()) instanceof MultirolePipe pipe) {
-                                pipe.addType(type, true);
-                            }
-                        }
-                        return true;
-                    }
-                    return false;
-                }
-
-                @Override
-                public InteractionResult useOn(UseOnContext pContext) {
-
-                    if (pContext.getLevel().getBlockEntity(pContext.getClickedPos()) instanceof MultirolePipe clickedOn) {
-                        if (!clickedOn.getSubtypes().contains(type)) {
-                            clickedOn.addType(type, false);
-                            clickedOn.findCapabilityHolders();
-                            clickedOn.getManager().addToUpdateQueue(clickedOn);
-                            return InteractionResult.PASS;
-                        }
-                    }
-
-                    return super.useOn(pContext);
-                }
-            }
-
-        }
     }
 
     public static final class BlockEntities {
 
-        //public static final makeBlockEntity<MultirolePipe> MULTIROLE_PIPE = makeBlockEntity.build("multirole_cable", MultirolePipe::new, ENERGY_CABLE_BLOCK.get(), ITEM_CABLE_BLOCK.get());
-        public static final makeBlockEntity<Generator> ENERGY_GENERATOR = makeBlockEntity.build("energy_generator", Generator::new, ENERGY_MANIPULATOR_BLOCK);
-
-        public static final RegistryObject<BlockEntityType<MultirolePipe>> MULTIROLE_PIPE = BLOCK_ENTITIES.register("multirole_cable_entity", () -> BlockEntityType.Builder.of(MultirolePipe::new, ENERGY_CABLE_BLOCK.get(), ITEM_CABLE_BLOCK.get(), FLUID_CABLE_BLOCK.get()).build(null));
+        public static final RegistryObject<BlockEntityType<DynamicTilingEntity>> DISPATCH_ENTITY
+                = BLOCK_ENTITIES.register("dispatch_entity",
+                () -> BlockEntityType.Builder.of(DynamicTilingEntity::new, Blocks.DISPATCH_BLOCK.get()).build(null));
 
 
         public static void init() {
-        }
 
-
-        public static class makeBlockEntity<T extends BlockEntity> implements Supplier<BlockEntityType<T>> {
-
-            private final RegistryObject<BlockEntityType<T>> type;
-
-            public static <T extends BlockEntity> makeBlockEntity<T> build(
-                    String name,
-                    BlockEntityType.BlockEntitySupplier<T> blockEntitySupplier,
-                    Supplier<? extends Block> valid) {
-                return new makeBlockEntity<T>(BLOCK_ENTITIES.register(name, () -> BlockEntityType.Builder.of(blockEntitySupplier, valid.get()).build(null)));
-            }
-
-            public static <T extends BlockEntity> makeBlockEntity<T> buildEntityAndBlock(
-                    String name,
-                    BlockEntityType.BlockEntitySupplier<T> blockEntitySupplier,
-                    Blocks.makeBlock<?> valid) {
-                return new makeBlockEntity<T>(BLOCK_ENTITIES.register(name, () -> BlockEntityType.Builder.of(blockEntitySupplier, valid.get()).build(null)));
-            }
-
-            public makeBlockEntity(RegistryObject<BlockEntityType<T>> type) {
-                this.type = type;
-            }
-
-            @Override
-            public BlockEntityType<T> get() {
-                return this.getType().get();
-            }
-
-            public RegistryObject<BlockEntityType<T>> getType() {
-                return type;
-            }
         }
 
     }

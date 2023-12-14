@@ -25,10 +25,10 @@ public class PacketHandler {
     }
 
     public static void register() {
-        INSTANCE.messageBuilder(SyncBlockEntityAt.class, nextID())
-                .encoder(SyncBlockEntityAt::toBytes)
-                .decoder(SyncBlockEntityAt::new)
-                .consumer(SyncBlockEntityAt::handle)
+        INSTANCE.messageBuilder(LevelNetworkPacket.class, nextID())
+                .encoder(LevelNetworkPacket::toBytes)
+                .decoder(LevelNetworkPacket::new)
+                .consumerMainThread(LevelNetworkPacket::handle)
                 .add();
     }
 

@@ -1,6 +1,6 @@
 package mod.kerzox.dispatch.common.network;
 
-import mod.kerzox.dispatch.common.entity.BasicBlockEntity;
+import mod.kerzox.dispatch.common.entity.SyncBlockEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -42,16 +42,16 @@ public class SyncBlockEntityAt {
 
     private static void handleOnServer(SyncBlockEntityAt packet, Supplier<NetworkEvent.Context> ctx) {
         BlockPos pos = NbtUtils.readBlockPos(packet.tag.getCompound("pos"));
-        Level level = ctx.get().getSender().getLevel();
-        if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof BasicBlockEntity entity) {
+        Level level = ctx.get().getSender().getCommandSenderWorld();
+        if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof SyncBlockEntity entity) {
             entity.handleUpdateTag(packet.tag);
         }
     }
 
     private static void handleOnClient(SyncBlockEntityAt packet, Supplier<NetworkEvent.Context> ctx) {
         BlockPos pos = NbtUtils.readBlockPos(packet.tag.getCompound("pos"));
-        Level level = Minecraft.getInstance().player.getLevel();
-        if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof BasicBlockEntity entity) {
+        Level level = Minecraft.getInstance().player.getCommandSenderWorld();
+        if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof SyncBlockEntity entity) {
             entity.handleUpdateTag(packet.tag);
         }
     }
