@@ -4,6 +4,7 @@ import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.ItemStackHandler;
@@ -26,6 +27,11 @@ public class ItemSubNetwork extends AbstractSubNetwork {
     @Override
     public <T> LazyOptional<T> getHandler(Direction side) {
         return handlerLazyOptional.cast();
+    }
+
+    @Override
+    public void mergeData(CompoundTag serializeNBT) {
+
     }
 
     @Override

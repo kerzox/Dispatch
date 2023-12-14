@@ -38,6 +38,7 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
     public void attach(BlockPos pos) {
         preAttachment(pos);
         this.nodes.addByPosition(pos);
+
         postAttachment(pos);
     }
 
@@ -47,19 +48,20 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
         postDetachment(pos);
     }
 
-    private void preAttachment(BlockPos pos) {
+    protected void preAttachment(BlockPos pos) {
 
     }
 
-    private void postAttachment(BlockPos pos) {
+    protected void postAttachment(BlockPos pos) {
 
     }
 
-    private void preDetachment(BlockPos pos) {
+    protected void preDetachment(BlockPos pos) {
 
     }
 
-    private void postDetachment(BlockPos pos) {
+    protected void postDetachment(BlockPos pos) {
+
     }
 
     public Level getLevel() {
@@ -115,4 +117,6 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
     public abstract int getRenderingColour();
 
     public abstract <T> LazyOptional<T> getHandler(Direction side);
+
+    public abstract void mergeData(CompoundTag serializeNBT);
 }

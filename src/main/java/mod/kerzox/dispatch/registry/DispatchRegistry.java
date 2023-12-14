@@ -152,6 +152,9 @@ public class DispatchRegistry {
                                             BlockPos pos = ctx.getClickedPos().relative(direction);
                                             if (ctx.getLevel().getBlockEntity(pos) instanceof DynamicTilingEntity entity) {
                                                 entity.addVisualConnection(direction.getOpposite());
+                                                if (ctx.getLevel().getBlockEntity(ctx.getClickedPos()) instanceof DynamicTilingEntity us) {
+                                                    us.addVisualConnection(direction);
+                                                }
                                             }
                                         }
                                     }
@@ -192,6 +195,9 @@ public class DispatchRegistry {
                                             BlockPos pos = ctx.getClickedPos().relative(direction);
                                             if (ctx.getLevel().getBlockEntity(pos) instanceof DynamicTilingEntity entity) {
                                                 entity.addVisualConnection(direction.getOpposite());
+                                                if (ctx.getLevel().getBlockEntity(ctx.getClickedPos()) instanceof DynamicTilingEntity us) {
+                                                    us.addVisualConnection(direction);
+                                                }
                                             }
                                         }
                                     }

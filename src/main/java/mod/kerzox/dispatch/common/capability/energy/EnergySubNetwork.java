@@ -5,6 +5,7 @@ import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 
@@ -36,5 +37,10 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     @Override
     public <T> LazyOptional<T> getHandler(Direction side) {
         return handler.cast();
+    }
+
+    @Override
+    public void mergeData(CompoundTag serializeNBT) {
+        System.out.println(serializeNBT);
     }
 }

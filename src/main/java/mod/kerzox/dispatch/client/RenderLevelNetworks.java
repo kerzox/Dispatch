@@ -103,6 +103,7 @@ public class RenderLevelNetworks {
                             for (AbstractSubNetwork subNetwork : network.getSubNetworks()) {
                                 for (LevelNode node : subNetwork.getNodes()) {
                                     BlockPos cablePos = node.getPos();
+                                    if (level.getBlockEntity(cablePos) != null) continue;
                                     if (calculateDistance(position.getX(), position.getY(), position.getZ(), cablePos.getX(), cablePos.getY(), cablePos.getZ()) < radius) {
                                         float red = subNetwork instanceof EnergySubNetwork ? 0 : 1;
                                         float green = subNetwork instanceof EnergySubNetwork ? 1 : 0;

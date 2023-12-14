@@ -6,6 +6,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.util.INBTSerializable;
 
 import java.util.*;
@@ -90,6 +92,8 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
                     for (T network : getSubnetsByPosition(chosenPosition)) {
                         if (network != individualNetwork) {
                             //TODO this is where data should be transferred into next one
+
+                            individualNetwork.mergeData(network.serializeNBT());
 
                             for (LevelNode node : network.getNodes()) {
                                 individualNetwork.attach(node);

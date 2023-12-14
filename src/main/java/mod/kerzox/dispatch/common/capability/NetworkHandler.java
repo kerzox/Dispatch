@@ -93,6 +93,7 @@ public class NetworkHandler implements ILevelNetwork, ICapabilitySerializable<Co
     }
 
     public AbstractSubNetwork getSubnetFromPos(Capability<?> capability, LevelNode pos) {
+        if (!networkMap.containsKey(capability)) return null;
         return networkMap.get(capability).getSubnetByPosition(pos);
     }
 

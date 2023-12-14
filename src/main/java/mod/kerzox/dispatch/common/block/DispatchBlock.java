@@ -62,18 +62,21 @@ public class DispatchBlock extends Block implements EntityBlock {
 
                         // TODO expand this for the io so if all subnets are set to none dont show visual connection
 
-                        // check for other block entities and or get another cable and update it visually
-                        if (blockEntity != null) {
-
-                            for (AbstractSubNetwork subNetwork : network.getSubnetsFrom(LevelNode.of(pPos))) {
+                        for (AbstractSubNetwork subNetwork : network.getSubnetsFrom(LevelNode.of(pPos))) {
+                            // check for other block entities and or get another cable and update it visually
+                            if (blockEntity != null) {
                                 LazyOptional<?> capability = blockEntity.getCapability(subNetwork.getCapability());
                                 if (capability.isPresent()) {
                                     if (blockEntity instanceof DynamicTilingEntity dynamicTilingEntity) {
                                         dynamicTilingEntity.addVisualConnection(direction.getOpposite());
                                     }
-                                    notified.addVisualConnection(direction);
                                 }
                             }
+
+                            if (network.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pPos.relative(direction))) != null) {
+                                notified.addVisualConnection(direction);
+                            }
+
                         }
                     }
 
@@ -82,6 +85,7 @@ public class DispatchBlock extends Block implements EntityBlock {
 
             }
         }
+
     }
 
     @Override

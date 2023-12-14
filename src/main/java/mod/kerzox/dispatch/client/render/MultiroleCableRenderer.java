@@ -71,7 +71,7 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
                     });
                     pose.pop();
                 } else {
-                    colours.set(RenderingUtil.convertColor(0xf14f4f));
+                    colours.set(RenderingUtil.convertColor(0xFF323232));
                     pose.push();
                     renderCore(pBlockEntity, pPackedOverlay, pose, colours, pPackedLight, pPackedOverlay, builder, model2);
                     pBlockEntity.getConnectedSides().forEach((connectedDirection, face) -> {
