@@ -1,5 +1,6 @@
 package mod.kerzox.dispatch.common.capability;
 
+import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -21,10 +22,12 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
     protected AbstractNetwork<?> network;
     protected NodeList nodes = new NodeList();
     protected Capability<?> capability;
+    protected DispatchItem.Tiers tier;
 
-    public AbstractSubNetwork(AbstractNetwork<?> network, Capability<?> capability) {
+    public AbstractSubNetwork(AbstractNetwork<?> network, Capability<?> capability, DispatchItem.Tiers tier) {
         this.network = network;
         this.capability = capability;
+        this.tier = tier;
     }
 
     public abstract void tick();
@@ -103,6 +106,7 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
             list.add(node.serialize());
         });
         tag.put("nodes", list);
+        tag.putString("tier", this.tier.getSerializedName());
         tag.put("data", write());
         return tag;
     }
@@ -110,6 +114,7 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
     @Override
     public void deserializeNBT(CompoundTag tag) {
         readPositionsFromTag(tag);
+        this.tier = DispatchItem.Tiers.valueOf(tag.getString("tier").toUpperCase());
         read(tag.getCompound("data"));
     }
 
@@ -122,6 +127,10 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
                 attach(node);
             }
         }
+    }
+
+    public DispatchItem.Tiers getTier() {
+        return tier;
     }
 
     public Capability<?> getCapability() {

@@ -25,6 +25,8 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 import java.util.List;
 import java.util.Set;
@@ -36,6 +38,8 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
     public static final ResourceLocation CONNECTED_BIG = new ResourceLocation(Dispatch.MODID, "block/bigger_cable_connected");
     public static final ResourceLocation CORE_BIG = new ResourceLocation(Dispatch.MODID, "block/bigger_cable");
     public static final ResourceLocation CORE = new ResourceLocation(Dispatch.MODID, "block/cable");
+
+    public static final ResourceLocation CORE_ENERGY = new ResourceLocation(Dispatch.MODID, "block/energy_cable");
 
     public MultiroleCableRenderer(BlockEntityRendererProvider.Context pContext) {
 
@@ -65,7 +69,7 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
                 if (list.size() == 1) {
                     pose.push();
                     colours.set(RenderingUtil.convertColor(list.get(0).getRenderingColour()));
-                    renderCore(pBlockEntity, pPackedOverlay, pose, colours, pPackedLight, pPackedOverlay, builder);
+                    renderCore(list.get(0).getCapability(), pBlockEntity, pPackedOverlay, pose, colours, pPackedLight, pPackedOverlay, builder);
                     pBlockEntity.getConnectedSides().forEach((connectedDirection, face) -> {
                         renderPipeConnection(pBlockEntity, pPoseStack, pPackedOverlay, pose, colours, model, pPackedLight, pPackedOverlay, builder, connectedDirection, face == DynamicTilingEntity.Face.CONNECTION);
                     });
@@ -113,9 +117,9 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
         }
     }
 
-    private void renderCore(DynamicTilingEntity pBlockEntity, int pPackedOverlay, WrappedPose pose, AtomicReference<float[]> colours, int blockLight, int skyLight, VertexConsumer builder) {
+    private void renderCore(Capability<?> capability, DynamicTilingEntity pBlockEntity, int pPackedOverlay, WrappedPose pose, AtomicReference<float[]> colours, int blockLight, int skyLight, VertexConsumer builder) {
         for (Direction direction : Direction.values()) {
-            List<BakedQuad> quads = getQuads(Minecraft.getInstance().getModelManager().getModel(CORE), pBlockEntity, direction, RenderType.cutout());
+            List<BakedQuad> quads = getQuads(capability == ForgeCapabilities.ENERGY ? Minecraft.getInstance().getModelManager().getModel(CORE_ENERGY) : Minecraft.getInstance().getModelManager().getModel(CORE), pBlockEntity, direction, RenderType.cutout());
             RenderingUtil.renderQuads(pose.last(), builder, colours.get()[0], colours.get()[1], colours.get()[2], 1f,
                     quads, LightTexture.pack(blockLight, skyLight), pPackedOverlay);
         }

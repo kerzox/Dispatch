@@ -1,6 +1,7 @@
 package mod.kerzox.dispatch.common.capability.energy;
 
 import mod.kerzox.dispatch.common.capability.AbstractNetwork;
+import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
@@ -31,8 +32,8 @@ public class EnergyNetworkHandler extends AbstractNetwork<EnergySubNetwork> {
     }
 
     @Override
-    protected EnergySubNetwork createSubnetAtPosition(BlockPos pos) {
-        return new EnergySubNetwork(this, pos);
+    protected EnergySubNetwork createSubnetAtPosition(DispatchItem.Tiers tier, BlockPos pos) {
+        return new EnergySubNetwork(this, pos, tier);
     }
 
 }

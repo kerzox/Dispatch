@@ -1,6 +1,7 @@
 package mod.kerzox.dispatch.common.capability.item;
 
 import mod.kerzox.dispatch.common.capability.AbstractNetwork;
+import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
@@ -23,7 +24,7 @@ public class ItemNetworkHandler extends AbstractNetwork<ItemSubNetwork> {
     }
 
     @Override
-    protected ItemSubNetwork createSubnetAtPosition(BlockPos pos) {
-        return new ItemSubNetwork(this, pos);
+    protected ItemSubNetwork createSubnetAtPosition(DispatchItem.Tiers tier, BlockPos pos) {
+        return new ItemSubNetwork(this, pos, tier);
     }
 }

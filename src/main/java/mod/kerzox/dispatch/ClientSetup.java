@@ -21,6 +21,7 @@ public class ClientSetup {
         event.register(MultiroleCableRenderer.CONNECTED_BIG);
         event.register(MultiroleCableRenderer.CORE_BIG);
         event.register(MultiroleCableRenderer.CORE);
+        event.register(MultiroleCableRenderer.CORE_ENERGY);
     }
 
     public static void init(FMLClientSetupEvent event) {

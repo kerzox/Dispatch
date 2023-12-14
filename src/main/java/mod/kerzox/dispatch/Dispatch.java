@@ -19,7 +19,9 @@ import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -39,6 +41,8 @@ public class Dispatch
     public Dispatch()
     {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.GENERAL_SPEC);
 
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
@@ -67,8 +71,12 @@ public class Dispatch
     public void addCreative(BuildCreativeModeTabContentsEvent event)
     {
         if (event.getTabKey() == DispatchRegistry.TAB.getKey()) {
-            event.accept(DispatchRegistry.Items.ENERGY_CABLE_ITEM.get());
-            event.accept(DispatchRegistry.Items.ITEM_CABLE_ITEM.get());
+            for (RegistryObject<Item> item : DispatchRegistry.Items.ENERGY_CABLES.values()) {
+                event.accept(item.get());
+            }
+            for (RegistryObject<Item> item : DispatchRegistry.Items.ITEM_CABLES.values()) {
+                event.accept(item.get());
+            }
         }
     }
 

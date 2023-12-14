@@ -28,6 +28,8 @@ import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 public class DispatchBlock extends Block implements EntityBlock {
 
     public DispatchBlock(Properties p_49795_) {
@@ -64,16 +66,19 @@ public class DispatchBlock extends Block implements EntityBlock {
 
                         for (AbstractSubNetwork subNetwork : network.getSubnetsFrom(LevelNode.of(pPos))) {
                             // check for other block entities and or get another cable and update it visually
-                            if (blockEntity != null) {
-                                LazyOptional<?> capability = blockEntity.getCapability(subNetwork.getCapability());
+                            if (blockEntity != null && !(blockEntity instanceof DynamicTilingEntity)) {
+                                LazyOptional<?> capability = blockEntity.getCapability(subNetwork.getCapability(), direction.getOpposite());
                                 if (capability.isPresent()) {
-                                    if (blockEntity instanceof DynamicTilingEntity dynamicTilingEntity) {
-                                        dynamicTilingEntity.addVisualConnection(direction.getOpposite());
-                                    }
+                                    notified.addVisualConnection(direction);
                                 }
                             }
 
-                            if (network.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pPos.relative(direction))).isPresent()) {
+                            Optional<AbstractSubNetwork> otherSubnet = network.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pPos.relative(direction)));
+
+                            if (otherSubnet.isPresent() && subNetwork.getTier() == otherSubnet.get().getTier()) {
+                                if (blockEntity instanceof DynamicTilingEntity dynamicTilingEntity) {
+                                    dynamicTilingEntity.addVisualConnection(direction.getOpposite());
+                                }
                                 notified.addVisualConnection(direction);
                             }
 
@@ -100,12 +105,18 @@ public class DispatchBlock extends Block implements EntityBlock {
                     if (blockEntity != null) {
                         BlockPos pos1 = pPos.subtract(pFromPos);
                         LazyOptional<?> capability = blockEntity.getCapability(subNetwork.getCapability());
-                        if (capability.isPresent()) {
+                        if (capability.isPresent() && !(blockEntity instanceof DynamicTilingEntity)) {
                             notifiedPipe.addVisualConnection(facing);
                             capability.addListener(l -> notifiedPipe.removeVisualConnection(facing));
-                            if (blockEntity instanceof DynamicTilingEntity energyCableEntity) {
-                                energyCableEntity.addVisualConnection(facing.getOpposite());
+                        }
+
+                        Optional<AbstractSubNetwork> otherSubnet = capability1.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pos1));
+
+                        if (otherSubnet.isPresent() && subNetwork.getTier() == otherSubnet.get().getTier()) {
+                            if (blockEntity instanceof DynamicTilingEntity dynamicTilingEntity) {
+                                dynamicTilingEntity.addVisualConnection(facing.getOpposite());
                             }
+                            notifiedPipe.addVisualConnection(facing);
                         }
 
                     } else {

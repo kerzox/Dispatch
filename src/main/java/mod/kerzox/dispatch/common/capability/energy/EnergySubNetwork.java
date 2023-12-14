@@ -1,8 +1,10 @@
 package mod.kerzox.dispatch.common.capability.energy;
 
 import com.google.common.graph.Network;
+import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.common.capability.*;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -33,8 +35,8 @@ public class EnergySubNetwork extends AbstractSubNetwork {
         Add the gui screens to allow for config and then add insertion lists, extraction lists etc.
      */
 
-    public EnergySubNetwork(EnergyNetworkHandler network, BlockPos pos) {
-        super(network, ForgeCapabilities.ENERGY);
+    public EnergySubNetwork(EnergyNetworkHandler network, BlockPos pos, DispatchItem.Tiers tier) {
+        super(network, ForgeCapabilities.ENERGY, tier);
         nodes.addByPosition(pos);
     }
 
@@ -48,8 +50,9 @@ public class EnergySubNetwork extends AbstractSubNetwork {
 
         for (IEnergyStorage consumer : consumers) {
             //TODO remove this placeholder and replace with tiered cables.
-            int amount = Math.min(current.get(), 500 / consumers.size());
-            int received = consumer.receiveEnergy(amount, false);
+            long amount = Math.min(current.get(), Config.getEnergyTransfer(getTier()) / consumers.size());
+            if (amount > Integer.MAX_VALUE) amount = Integer.MAX_VALUE;
+            int received = consumer.receiveEnergy((int) amount, false);
             storage.consumeEnergy(received);
             current.set(storage.getEnergyStored());
         }
@@ -117,7 +120,9 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     @Override
     protected void postAttachment(BlockPos pos) {
         // change capacity based on number of cables
-        storage.capacity = nodes.size() * 1000L;
+        storage.capacity = nodes.size() * Config.getEnergyCapacity(getTier());
+        storage.maxExtract = storage.capacity;
+        storage.maxReceive = storage.capacity;
     }
 
     @Override

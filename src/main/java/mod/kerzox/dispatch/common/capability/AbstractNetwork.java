@@ -1,5 +1,6 @@
 package mod.kerzox.dispatch.common.capability;
 
+import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -43,7 +44,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
                 if (network != null && getSubnetByPosition(position) != network) {
                     // cause update in this network.
                     for (LevelNode node : network.getNodes()) {
-                        createOrAttachTo(node.getPos(), false);
+                        createOrAttachTo(network.getTier(), node.getPos(), false);
                     }
                 }
             }
@@ -70,11 +71,12 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
      * Called when an item either places a block or asks for a position to be added to a sub network.
      * This will attempt to firstly connect to an existing network (merging networks together and removing old ones)
      * If it fails to find a network to connect to it will then create a new subnet at the positon chosen.
+     * @param tier subnet tier
      * @param chosenPosition position being added
      * @param updateNeighbours whether or not to update surrounding positions in subnets.
      */
 
-    public void createOrAttachTo(BlockPos chosenPosition, boolean updateNeighbours) {
+    public void createOrAttachTo(DispatchItem.Tiers tier, BlockPos chosenPosition, boolean updateNeighbours) {
 
         // Loop through all the individual networks
         for (T individualNetwork : getSubNetworks()) {
@@ -83,13 +85,12 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
 
                 BlockPos neighbourPosition = chosenPosition.relative(direction);
 
-                if (individualNetwork.contains(neighbourPosition)) {
+                if (individualNetwork.contains(neighbourPosition) && individualNetwork.tier == tier) {
                     // we found a neighbouring position that is in an existing network we should connect to it.
 
                     // check if we already have a network because we might have to merge.
                     for (T network : getSubnetsByPosition(chosenPosition)) {
                         if (network != individualNetwork) {
-                            //TODO this is where data should be transferred into next one
 
                             for (LevelNode node : network.getNodes()) {
                                 individualNetwork.attach(node);
@@ -113,7 +114,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
 
         // if we get here create a network
         if (getSubnetByPosition(chosenPosition) == null) {
-            createNetwork(chosenPosition);
+            createNetwork(tier, chosenPosition);
         }
 
     }
@@ -180,7 +181,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
 
     public T separateNetworks(T old, BlockPos startingFrom) {
         // create a subnet from starting position
-        T separated = createSubnetAtPosition(startingFrom);
+        T separated = createNetworkAndReturn(old.tier, startingFrom);
 
         for (BlockPos pos : DepthFirstSearch(old, startingFrom)) {
             // get tag data from this position (to save serialized data on each level Node)
@@ -232,12 +233,26 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
 
     /**
      * Create a subnet from provided position
+     * @param tier
      * @param pos position to create network at
      */
 
-    public void createNetwork(BlockPos pos) {
-        T network = createSubnetAtPosition(pos);
+    public void createNetwork(DispatchItem.Tiers tier, BlockPos pos) {
+        T network = createSubnetAtPosition(tier, pos);
         getSubNetworks().add(network);
+    }
+
+    /**
+     * Create a subnet from provided position
+     * @param tier
+     * @param pos position to create network at
+     * @return returns new network
+     */
+
+    public T createNetworkAndReturn(DispatchItem.Tiers tier, BlockPos pos) {
+        T network = createSubnetAtPosition(tier, pos);
+        getSubNetworks().add(network);
+        return network;
     }
 
     /**
@@ -246,7 +261,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
      * @return newly created sub network
      */
 
-    protected abstract T createSubnetAtPosition(BlockPos pos);
+    protected abstract T createSubnetAtPosition(DispatchItem.Tiers tier, BlockPos pos);
 
     /**
      * Get subnet by position
@@ -328,7 +343,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
     }
 
     protected T createNetworkFromTag(CompoundTag tag) {
-        T network = createSubnetAtPosition(BlockPos.ZERO);
+        T network = createSubnetAtPosition(DispatchItem.Tiers.valueOf(tag.getString("tier").toUpperCase()), BlockPos.ZERO);
         network.deserializeNBT(tag);
         return network;
     }

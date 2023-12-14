@@ -1,11 +1,13 @@
 package mod.kerzox.dispatch.registry;
 
+import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.common.block.DispatchBlock;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNode;
 import mod.kerzox.dispatch.common.capability.NetworkHandler;
 import mod.kerzox.dispatch.common.capability.energy.EnergyNetworkHandler;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleType;
@@ -40,6 +42,9 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static mod.kerzox.dispatch.Dispatch.MODID;
 import static net.minecraftforge.versions.forge.ForgeVersion.MOD_ID;
@@ -82,7 +87,7 @@ public class DispatchRegistry {
 
     public static final RegistryObject<CreativeModeTab> TAB = CREATIVE_MODE_TABS.register("dispatch_tab", () -> CreativeModeTab.builder()
             .title(Component.literal("Dispatch"))
-            .icon(() -> Items.ENERGY_CABLE_ITEM.get().getDefaultInstance())
+            .icon(() -> Items.ENERGY_CABLES.get(DispatchItem.Tiers.BASIC).get().getDefaultInstance())
             .build());
 
 
@@ -122,92 +127,14 @@ public class DispatchRegistry {
 
     public static final class Items {
 
-        public static final RegistryObject<Item> ENERGY_CABLE_ITEM = ITEMS.register("dispatch_item", () ->
-                new BlockItem(Blocks.DISPATCH_BLOCK.get(), new Item.Properties()) {
-                    @Override
-                    protected boolean placeBlock(BlockPlaceContext ctx, BlockState p_40579_) {
-                        if (ctx.getPlayer().isShiftKeyDown()) return false;
-                        if (super.placeBlock(ctx, p_40579_)) {
-                            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
-                                Player player = ctx.getPlayer();
-                                if (capability instanceof NetworkHandler handler) {
-                                    handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ENERGY, ctx.getClickedPos(), true);
-                                }
-                            });
-                            return true;
-                        }
-                        return false;
-                    }
-
-                    @Override
-                    public InteractionResult useOn(UseOnContext ctx) {
-                        if (!ctx.getLevel().isClientSide && ctx.getPlayer().isShiftKeyDown()) {
-                            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
-                                Player player = ctx.getPlayer();
-                                if (capability instanceof NetworkHandler handler) {
-                                    handler.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(ctx.getClickedPos())).ifPresent(subNetwork -> {
-                                        handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ENERGY, ctx.getClickedPos(), true);
-                                        for (Direction direction : Direction.values()) {
-                                            BlockPos pos = ctx.getClickedPos().relative(direction);
-                                            if (ctx.getLevel().getBlockEntity(pos) instanceof DynamicTilingEntity entity) {
-                                                entity.addVisualConnection(direction.getOpposite());
-                                                if (ctx.getLevel().getBlockEntity(ctx.getClickedPos()) instanceof DynamicTilingEntity us) {
-                                                    us.addVisualConnection(direction);
-                                                }
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                        return super.useOn(ctx);
-                    }
-                });
-
-        public static final RegistryObject<Item> ITEM_CABLE_ITEM = ITEMS.register("dispatch_2_item", () ->
-                new BlockItem(Blocks.DISPATCH_BLOCK.get(), new Item.Properties()) {
-                    @Override
-                    protected boolean placeBlock(BlockPlaceContext ctx, BlockState p_40579_) {
-                        if (ctx.getPlayer().isShiftKeyDown()) return false;
-                        if (super.placeBlock(ctx, p_40579_)) {
-                            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
-                                Player player = ctx.getPlayer();
-                                if (capability instanceof NetworkHandler handler) {
-                                    handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ITEM_HANDLER, ctx.getClickedPos(), true);
-                                }
-                            });
-                            return true;
-                        }
-                        return false;
-                    }
-
-                    @Override
-                    public InteractionResult useOn(UseOnContext ctx) {
-                        if (!ctx.getLevel().isClientSide && ctx.getPlayer().isShiftKeyDown()) {
-                            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
-                                Player player = ctx.getPlayer();
-                                if (capability instanceof NetworkHandler handler) {
-                                    handler.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(ctx.getClickedPos())).ifPresent(subNetwork -> {
-                                        handler.createOrAttachToCapabilityNetwork(ForgeCapabilities.ITEM_HANDLER, ctx.getClickedPos(), true);
-                                        for (Direction direction : Direction.values()) {
-                                            BlockPos pos = ctx.getClickedPos().relative(direction);
-                                            if (ctx.getLevel().getBlockEntity(pos) instanceof DynamicTilingEntity entity) {
-                                                entity.addVisualConnection(direction.getOpposite());
-                                                if (ctx.getLevel().getBlockEntity(ctx.getClickedPos()) instanceof DynamicTilingEntity us) {
-                                                    us.addVisualConnection(direction);
-                                                }
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                        return super.useOn(ctx);
-                    }
-                });
+        public static Map<DispatchItem.Tiers, RegistryObject<Item>> ENERGY_CABLES = new HashMap<>();
+        public static Map<DispatchItem.Tiers, RegistryObject<Item>> ITEM_CABLES = new HashMap<>();
 
         public static void init() {
-
+            for (DispatchItem.Tiers tier : DispatchItem.Tiers.values()) {
+                ENERGY_CABLES.put(tier, ITEMS.register(tier.getSerializedName()+"_energy_cable_item", () -> new DispatchItem(ForgeCapabilities.ENERGY, tier, new Item.Properties())));
+                ITEM_CABLES.put(tier, ITEMS.register(tier.getSerializedName()+"_item_cable_item", () -> new DispatchItem(ForgeCapabilities.ITEM_HANDLER, tier, new Item.Properties())));
+            }
         }
 
     }

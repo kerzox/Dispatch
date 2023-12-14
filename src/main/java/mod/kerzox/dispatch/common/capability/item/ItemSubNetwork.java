@@ -2,6 +2,7 @@ package mod.kerzox.dispatch.common.capability.item;
 
 import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
+import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -14,8 +15,8 @@ public class ItemSubNetwork extends AbstractSubNetwork {
     private ItemStackHandler itemStackHandler = new ItemStackHandler(1);
     private LazyOptional<ItemStackHandler> handlerLazyOptional = LazyOptional.of(() -> itemStackHandler);
 
-    public ItemSubNetwork(AbstractNetwork<?> network, BlockPos pos) {
-        super(network, ForgeCapabilities.ITEM_HANDLER);
+    public ItemSubNetwork(AbstractNetwork<?> network, BlockPos pos, DispatchItem.Tiers tier) {
+        super(network, ForgeCapabilities.ITEM_HANDLER, tier);
         nodes.addByPosition(pos);
     }
 

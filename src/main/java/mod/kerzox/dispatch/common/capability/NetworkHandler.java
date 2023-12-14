@@ -3,6 +3,7 @@ package mod.kerzox.dispatch.common.capability;
 import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.common.capability.energy.EnergyNetworkHandler;
 import mod.kerzox.dispatch.common.capability.item.ItemNetworkHandler;
+import mod.kerzox.dispatch.common.item.DispatchItem;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -51,12 +52,8 @@ public class NetworkHandler implements ILevelNetwork, ICapabilitySerializable<Co
         }
     }
 
-    public void createOrAttachToCapabilityNetwork(Capability<?> capability, BlockPos pos, boolean updateNeighbours) {
-        networkMap.get(capability).createOrAttachTo(pos, updateNeighbours);
-    }
-
-    public void createOrAttachToCapabilityNetwork(Capability<?> capability, BlockPos pos) {
-        createOrAttachToCapabilityNetwork(capability, pos, false);
+    public void createOrAttachToCapabilityNetwork(Capability<?> capability, DispatchItem.Tiers tier, BlockPos pos, boolean updateNeighbours) {
+        networkMap.get(capability).createOrAttachTo(tier, pos, updateNeighbours);
     }
 
     public void detachFromCapability(Capability<?> capability, BlockPos pos) {
