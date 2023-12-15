@@ -1,6 +1,5 @@
 package mod.kerzox.dispatch.common.entity;
 
-import com.google.common.graph.Network;
 import mod.kerzox.dispatch.common.capability.*;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
@@ -11,8 +10,8 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.Capability;
@@ -21,9 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class DynamicTilingEntity extends SyncBlockEntity {
+
 
     public enum Face {
         NONE,
@@ -45,8 +44,8 @@ public class DynamicTilingEntity extends SyncBlockEntity {
     @Override
     public boolean onPlayerClick(Level pLevel, Player pPlayer, BlockPos pPos, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide && pHand == InteractionHand.MAIN_HAND) {
-            pLevel.getCapability(NetworkHandler.NETWORK).ifPresent(cap -> {
-                if (cap instanceof NetworkHandler networkHandler) {
+            pLevel.getCapability(LevelNetworkHandler.NETWORK).ifPresent(cap -> {
+                if (cap instanceof LevelNetworkHandler networkHandler) {
 
                     int total = 0;
                     for (AbstractNetwork<?> network : networkHandler.getNetworkMap().values()) {
@@ -69,9 +68,9 @@ public class DynamicTilingEntity extends SyncBlockEntity {
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        LazyOptional<ILevelNetwork> levelNetworkLazyOptional = level.getCapability(NetworkHandler.NETWORK);
+        LazyOptional<ILevelNetwork> levelNetworkLazyOptional = level.getCapability(LevelNetworkHandler.NETWORK);
         if (levelNetworkLazyOptional.resolve().isPresent()) {
-            if (levelNetworkLazyOptional.resolve().get() instanceof NetworkHandler handler) {
+            if (levelNetworkLazyOptional.resolve().get() instanceof LevelNetworkHandler handler) {
                 Optional<AbstractSubNetwork> subNetwork = handler.getSubnetFromPos(cap, LevelNode.of(worldPosition));
                 if (subNetwork.isPresent()) return subNetwork.get().getHandler(side);
             }
@@ -124,4 +123,17 @@ public class DynamicTilingEntity extends SyncBlockEntity {
         }
     }
 
+    // this is only used when the block is removed the world and we need to get the drop
+    private List<AbstractSubNetwork> subnets = new ArrayList<>();
+
+    public void setSubnets(List<AbstractSubNetwork> subnets) {
+        this.subnets = subnets;
+    }
+
+    public ItemStack getDrop() {
+        for (AbstractSubNetwork subnet : subnets) {
+            return new ItemStack(DispatchRegistry.Items.DISPATCH_CABLES.get(subnet.getCapability()).get(subnet.getTier()).get());
+        }
+        return ItemStack.EMPTY;
+    }
 }

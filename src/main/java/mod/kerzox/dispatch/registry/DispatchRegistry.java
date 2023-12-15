@@ -1,44 +1,26 @@
 package mod.kerzox.dispatch.registry;
 
-import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.common.block.DispatchBlock;
-import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
-import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.capability.NetworkHandler;
-import mod.kerzox.dispatch.common.capability.energy.EnergyNetworkHandler;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
 import mod.kerzox.dispatch.common.item.DispatchItem;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.energy.EnergyStorage;
-import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -47,7 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static mod.kerzox.dispatch.Dispatch.MODID;
-import static net.minecraftforge.versions.forge.ForgeVersion.MOD_ID;
 
 public class DispatchRegistry {
 
@@ -127,14 +108,23 @@ public class DispatchRegistry {
 
     public static final class Items {
 
+        public static Map<Capability<?>, Map<DispatchItem.Tiers, RegistryObject<Item>>> DISPATCH_CABLES = new HashMap<>();
+
         public static Map<DispatchItem.Tiers, RegistryObject<Item>> ENERGY_CABLES = new HashMap<>();
         public static Map<DispatchItem.Tiers, RegistryObject<Item>> ITEM_CABLES = new HashMap<>();
+        public static Map<DispatchItem.Tiers, RegistryObject<Item>> FLUID_CABLES = new HashMap<>();
 
         public static void init() {
             for (DispatchItem.Tiers tier : DispatchItem.Tiers.values()) {
                 ENERGY_CABLES.put(tier, ITEMS.register(tier.getSerializedName()+"_energy_cable_item", () -> new DispatchItem(ForgeCapabilities.ENERGY, tier, new Item.Properties())));
                 ITEM_CABLES.put(tier, ITEMS.register(tier.getSerializedName()+"_item_cable_item", () -> new DispatchItem(ForgeCapabilities.ITEM_HANDLER, tier, new Item.Properties())));
+                FLUID_CABLES.put(tier, ITEMS.register(tier.getSerializedName()+"_fluid_cable_item", () -> new DispatchItem(ForgeCapabilities.FLUID_HANDLER, tier, new Item.Properties())));
             }
+
+            DISPATCH_CABLES.put(ForgeCapabilities.ENERGY, ENERGY_CABLES);
+            DISPATCH_CABLES.put(ForgeCapabilities.ITEM_HANDLER, ITEM_CABLES);
+            DISPATCH_CABLES.put(ForgeCapabilities.FLUID_HANDLER, FLUID_CABLES);
+
         }
 
     }

@@ -24,10 +24,11 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
     protected Capability<?> capability;
     protected DispatchItem.Tiers tier;
 
-    public AbstractSubNetwork(AbstractNetwork<?> network, Capability<?> capability, DispatchItem.Tiers tier) {
+    public AbstractSubNetwork(AbstractNetwork<?> network, Capability<?> capability, DispatchItem.Tiers tier, BlockPos pos) {
         this.network = network;
         this.capability = capability;
         this.tier = tier;
+        nodes.addByPosition(pos);
     }
 
     public abstract void tick();
@@ -141,6 +142,6 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
 
     public abstract <T> LazyOptional<T> getHandler(Direction side);
 
-    public abstract void mergeData(AbstractSubNetwork network);
+    public abstract void mergeData(BlockPos positionBeingMerged, AbstractSubNetwork network);
 
 }

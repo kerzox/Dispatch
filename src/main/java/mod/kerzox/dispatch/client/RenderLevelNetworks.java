@@ -2,57 +2,39 @@ package mod.kerzox.dispatch.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import mod.kerzox.dispatch.client.render.DispatchRenderTypes;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
+import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.capability.NetworkHandler;
 import mod.kerzox.dispatch.common.capability.energy.EnergySubNetwork;
 import mod.kerzox.dispatch.common.network.LevelNetworkPacket;
 import mod.kerzox.dispatch.common.network.PacketHandler;
-import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.OutlineBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.client.event.RenderHighlightEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.lighting.ForgeModelBlockRenderer;
-import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static net.minecraftforge.client.event.RenderLevelStageEvent.Stage.AFTER_PARTICLES;
 
@@ -97,8 +79,8 @@ public class RenderLevelNetworks {
 
                 PacketHandler.sendToServer(new LevelNetworkPacket(new CompoundTag()));
 
-                level.getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
-                    if (capability instanceof NetworkHandler handler) {
+                level.getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability -> {
+                    if (capability instanceof LevelNetworkHandler handler) {
                         handler.getNetworkMap().forEach((type, network) -> {
                             for (AbstractSubNetwork subNetwork : network.getSubNetworks()) {
                                 for (LevelNode node : subNetwork.getNodes()) {

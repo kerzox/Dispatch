@@ -96,7 +96,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
                                 individualNetwork.attach(node);
                             }
 
-                            if (!toRemove.contains(network)) individualNetwork.mergeData(network);
+                            if (!toRemove.contains(network)) individualNetwork.mergeData(chosenPosition, network);
 
                             markNetworkForDeletion(network);
                         }
@@ -156,7 +156,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
             }
         }
 
-        splitData(modifyingNetwork, newNetworks);
+        splitData(pos, modifyingNetwork, newNetworks);
 
         // remove the subnet
         getSubNetworks().remove(modifyingNetwork);
@@ -167,10 +167,11 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
 
     /**
      * Split data between networks
+     * @param pos
      * @param modifyingNetwork
      * @param newNetworks list of newly created networks
      */
-    protected abstract void splitData(T modifyingNetwork, List<T> newNetworks);
+    protected abstract void splitData(BlockPos pos, T modifyingNetwork, List<T> newNetworks);
 
     /**
      * Separate networks uses a DFS to find all positions connected from the starting position (starting node in DFS) and creates a new subnet

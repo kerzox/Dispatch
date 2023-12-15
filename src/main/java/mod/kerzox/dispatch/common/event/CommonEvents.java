@@ -1,13 +1,9 @@
 package mod.kerzox.dispatch.common.event;
 
-import com.google.common.graph.Network;
-import mod.kerzox.dispatch.Dispatch;
-import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
+import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.capability.NetworkHandler;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
-import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -96,8 +92,8 @@ public class CommonEvents {
             if(event.side == LogicalSide.SERVER) {
                 serverTick = (serverTick + 1) % 1_728_000;
                 prevServerTick = serverTick;
-                event.level.getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
-                    if (capability instanceof NetworkHandler network) {
+                event.level.getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability -> {
+                    if (capability instanceof LevelNetworkHandler network) {
                         network.tick();
                     }
                 });
@@ -116,8 +112,8 @@ public class CommonEvents {
 
         if (levelAcc instanceof Level level) {
 
-            level.getCapability(NetworkHandler.NETWORK).ifPresent(cap -> {
-                if (cap instanceof NetworkHandler levelNetwork) {
+            level.getCapability(LevelNetworkHandler.NETWORK).ifPresent(cap -> {
+                if (cap instanceof LevelNetworkHandler levelNetwork) {
 
                     if (event.getLevel().getBlockEntity(event.getPos()) instanceof DynamicTilingEntity) return;
 
@@ -133,7 +129,7 @@ public class CommonEvents {
             });
 
             for (Direction direction : Direction.values()) {
-                level.getCapability(NetworkHandler.NETWORK).map(h->h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
+                level.getCapability(LevelNetworkHandler.NETWORK).map(h->h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
                     for (AbstractSubNetwork subNetwork : abstractSubNetworks) {
                         if (subNetwork != null) subNetwork.update();
                     }
@@ -151,7 +147,7 @@ public class CommonEvents {
         if (levelAcc instanceof Level level) {
 
             for (Direction direction : Direction.values()) {
-                level.getCapability(NetworkHandler.NETWORK).map(h->h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
+                level.getCapability(LevelNetworkHandler.NETWORK).map(h->h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
                     for (AbstractSubNetwork subNetwork : abstractSubNetworks) {
                         subNetwork.update();
                     }

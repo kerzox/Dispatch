@@ -1,7 +1,7 @@
 package mod.kerzox.dispatch.common.capability;
 
-import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.common.capability.energy.EnergyNetworkHandler;
+import mod.kerzox.dispatch.common.capability.fluid.FluidNetworkHandler;
 import mod.kerzox.dispatch.common.capability.item.ItemNetworkHandler;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
@@ -19,20 +19,27 @@ import java.util.*;
 
 import static net.minecraftforge.common.capabilities.CapabilityManager.get;
 
-public class NetworkHandler implements ILevelNetwork, ICapabilitySerializable<CompoundTag> {
+public class LevelNetworkHandler implements ILevelNetwork, ICapabilitySerializable<CompoundTag> {
 
     public static final Capability<ILevelNetwork> NETWORK = get(new CapabilityToken<>(){});
 
-    private LazyOptional<NetworkHandler> lazyOptional = LazyOptional.of(() -> this);
+    public static LevelNetworkHandler getHandler(Level level) {
+        LazyOptional<ILevelNetwork> networkLazyOptional = level.getCapability(NETWORK);
+        if (networkLazyOptional.isPresent()) return (LevelNetworkHandler) level.getCapability(NETWORK).resolve().get();
+        else return null;
+    }
+
+    private LazyOptional<LevelNetworkHandler> lazyOptional = LazyOptional.of(() -> this);
     private Level level;
     private Map<Capability<?>, AbstractNetwork<?>> networkMap = new HashMap<>();
     private Queue<BlockPos> positionsAsNewCables = new LinkedList<>();
 
-    public NetworkHandler(Level level) {
+    public LevelNetworkHandler(Level level) {
         this.level = level;
         // declare networks to add to the map
         networkMap.put(ForgeCapabilities.ENERGY, new EnergyNetworkHandler(level));
         networkMap.put(ForgeCapabilities.ITEM_HANDLER, new ItemNetworkHandler(level));
+        networkMap.put(ForgeCapabilities.FLUID_HANDLER, new FluidNetworkHandler(level));
     }
     
     public void tick() {
@@ -98,7 +105,7 @@ public class NetworkHandler implements ILevelNetwork, ICapabilitySerializable<Co
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return NetworkHandler.NETWORK.orEmpty(cap, lazyOptional.cast());
+        return LevelNetworkHandler.NETWORK.orEmpty(cap, lazyOptional.cast());
     }
 
     @Override

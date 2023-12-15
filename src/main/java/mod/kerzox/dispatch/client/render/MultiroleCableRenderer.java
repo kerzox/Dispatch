@@ -3,11 +3,12 @@ package mod.kerzox.dispatch.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import mod.kerzox.dispatch.Dispatch;
-import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
+import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.capability.NetworkHandler;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.network.LevelNetworkPacket;
+import mod.kerzox.dispatch.common.network.PacketHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -18,7 +19,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -29,7 +30,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTilingEntity> {
@@ -61,10 +61,15 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
         int skyLight = pBlockEntity.getLevel().getBrightness(LightLayer.SKY, pos.above());
         VertexConsumer builder = pBufferSource.getBuffer(RenderType.cutout());
 
-        pBlockEntity.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(cap -> {
-            if (cap instanceof NetworkHandler networkHandler) {
+        pBlockEntity.getLevel().getCapability(LevelNetworkHandler.NETWORK).ifPresent(cap -> {
+            if (cap instanceof LevelNetworkHandler networkHandler) {
 
                 List<AbstractSubNetwork> list = networkHandler.getSubnetsFrom(LevelNode.of(pos));
+
+                if (list.isEmpty()) {
+                    PacketHandler.sendToServer(new LevelNetworkPacket(new CompoundTag()));
+                    return;
+                }
 
                 if (list.size() == 1) {
                     pose.push();

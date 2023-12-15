@@ -1,9 +1,6 @@
 package mod.kerzox.dispatch.common.network;
 
-import com.google.common.graph.Network;
-import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
-import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.capability.NetworkHandler;
+import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.network.client.LevelNetworkPacketClient;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -48,8 +45,8 @@ public class LevelNetworkPacket {
         ServerPlayer player = ctx.get().getSender();
         if (player != null) {
             Level level = player.getCommandSenderWorld();
-            level.getCapability(NetworkHandler.NETWORK).ifPresent(cap -> {
-                if (cap instanceof NetworkHandler network) {
+            level.getCapability(LevelNetworkHandler.NETWORK).ifPresent(cap -> {
+                if (cap instanceof LevelNetworkHandler network) {
                     if (packet.nbtTag.contains("node_to_update")) {
                         //TODO
                     }

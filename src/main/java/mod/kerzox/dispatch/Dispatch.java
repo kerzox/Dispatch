@@ -1,18 +1,14 @@
 package mod.kerzox.dispatch;
 
-import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
-import mod.kerzox.dispatch.common.capability.NetworkHandler;
+import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.event.CommonEvents;
 import mod.kerzox.dispatch.common.network.PacketHandler;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -33,6 +29,34 @@ import org.slf4j.Logger;
 @Mod(Dispatch.MODID)
 public class Dispatch
 {
+
+    /*
+
+        DONE
+            - Tiers
+
+        TODO
+            - I/O on each cable side
+                - needs gui
+            - Upgrades
+                - More slots for item/fluids?
+                - Speed increase (extraction / insertion)
+            - Filters
+            - Wrench (for cables)
+
+
+     */
+
+
+
+
+
+
+
+
+
+
+
     // Define mod id in a common place for everything to reference
     public static final String MODID = "dispatch";
     // Directly reference a slf4j logger
@@ -65,7 +89,7 @@ public class Dispatch
 
     @SubscribeEvent
     public void onCapabilityAttachLevel(AttachCapabilitiesEvent<Level> event) {
-        event.addCapability(new ResourceLocation(MODID, "level_network"), new NetworkHandler(event.getObject()));
+        event.addCapability(new ResourceLocation(MODID, "level_network"), new LevelNetworkHandler(event.getObject()));
     }
 
     public void addCreative(BuildCreativeModeTabContentsEvent event)

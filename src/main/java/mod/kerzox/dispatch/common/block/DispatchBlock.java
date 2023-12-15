@@ -1,33 +1,35 @@
 package mod.kerzox.dispatch.common.block;
 
-import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
+import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.capability.NetworkHandler;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
 import mod.kerzox.dispatch.common.entity.SyncBlockEntity;
+import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class DispatchBlock extends Block implements EntityBlock {
@@ -51,14 +53,27 @@ public class DispatchBlock extends Block implements EntityBlock {
         return super.use(pState, pLevel, pPos, pPlayer, pHand, pHit);
     }
 
+    @Override
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level, BlockPos pos, Player player) {
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be != null && be.getLevel() != null) {
+            for (AbstractSubNetwork subNetwork : Objects.requireNonNull(LevelNetworkHandler.getHandler(be.getLevel())).getSubnetsFrom(LevelNode.of(pos))) {
+                // just return the first subnet as the item
+                return new ItemStack(DispatchRegistry.Items.DISPATCH_CABLES.get(subNetwork.getCapability()).get(subNetwork.getTier()).get());
+            }
+        }
+
+        return super.getCloneItemStack(state, target, level, pos, player);
+    }
 
     @Override
     public void onPlace(BlockState state, Level pLevel, BlockPos pPos, BlockState pState, boolean moving) {
         if (pLevel.getBlockEntity(pPos) instanceof DynamicTilingEntity notified) {
             for (Direction direction : Direction.values()) {
 
-                pLevel.getCapability(NetworkHandler.NETWORK).ifPresent(capability1 -> {
-                    if (capability1 instanceof NetworkHandler network) {
+                pLevel.getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability1 -> {
+                    if (capability1 instanceof LevelNetworkHandler network) {
 
                         BlockEntity blockEntity = pLevel.getBlockEntity(pPos.relative(direction));
 
@@ -100,8 +115,8 @@ public class DispatchBlock extends Block implements EntityBlock {
             BlockEntity blockEntity = pLevel.getBlockEntity(pFromPos);
             BlockPos pos = pFromPos.subtract(pPos);
             Direction facing = Direction.fromDelta(pos.getX(), pos.getY(), pos.getZ());
-            pLevel.getCapability(NetworkHandler.NETWORK).ifPresent(capability1 -> {
-                for (AbstractSubNetwork subNetwork : ((NetworkHandler) capability1).getSubnetsFrom(LevelNode.of(pPos))) {
+            pLevel.getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability1 -> {
+                for (AbstractSubNetwork subNetwork : ((LevelNetworkHandler) capability1).getSubnetsFrom(LevelNode.of(pPos))) {
                     if (blockEntity != null) {
                         BlockPos pos1 = pPos.subtract(pFromPos);
                         LazyOptional<?> capability = blockEntity.getCapability(subNetwork.getCapability());
@@ -131,6 +146,43 @@ public class DispatchBlock extends Block implements EntityBlock {
     }
 
     @Override
+    public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos, Player player, boolean willHarvest, FluidState fluid) {
+
+
+        /*
+            Multi subnets means we fake the block break and drop a cable but leave the rest of the subnets.
+
+            TODO
+                - when i add a wrench check for which capability type to remove and remove that instead of random.
+         */
+
+        List<AbstractSubNetwork> subNetworks = LevelNetworkHandler.getHandler(level).getSubnetsFrom(LevelNode.of(pos));
+
+        if (subNetworks.size() > 1) {
+            for (AbstractSubNetwork subNetwork : subNetworks) {
+                LevelNetworkHandler.getHandler(level).detachFromCapability(subNetwork.getCapability(), pos);
+                ItemStack drop = new ItemStack(DispatchRegistry.Items.DISPATCH_CABLES.get(subNetwork.getCapability()).get(subNetwork.getTier()).get());
+                Block.popResource(level, pos, drop);
+                return false;
+            }
+        }
+
+        return super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+    }
+
+    @Override
+    public List<ItemStack> getDrops(BlockState p_287732_, LootParams.Builder p_287596_) {
+        BlockEntity blockentity = p_287596_.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
+
+        if (blockentity instanceof DynamicTilingEntity dynamicTilingEntity) {
+            return List.of(dynamicTilingEntity.getDrop());
+        }
+
+        return List.of(ItemStack.EMPTY);
+
+    }
+
+    @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState oState, boolean p_60519_) {
         if (level.getBlockEntity(pos) instanceof DynamicTilingEntity pipe) {
             for (Direction direction : pipe.getConnectionsAsDirections()) {
@@ -138,10 +190,11 @@ public class DispatchBlock extends Block implements EntityBlock {
                     connectedTo.removeVisualConnection(direction.getOpposite());
                 }
             }
+            pipe.setSubnets(LevelNetworkHandler.getHandler(level).getSubnetsFrom(LevelNode.of(pos)));
         }
         super.onRemove(state, level, pos, oState, p_60519_);
-        level.getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
-            if (capability instanceof NetworkHandler network) {
+        level.getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability -> {
+            if (capability instanceof LevelNetworkHandler network) {
                 network.detach(pos);
             }
         });

@@ -1,6 +1,5 @@
 package mod.kerzox.dispatch.common.capability.energy;
 
-import com.google.common.graph.Network;
 import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.common.capability.*;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
@@ -36,8 +35,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
      */
 
     public EnergySubNetwork(EnergyNetworkHandler network, BlockPos pos, DispatchItem.Tiers tier) {
-        super(network, ForgeCapabilities.ENERGY, tier);
-        nodes.addByPosition(pos);
+        super(network, ForgeCapabilities.ENERGY, tier, pos);
     }
 
     @Override
@@ -49,7 +47,6 @@ public class EnergySubNetwork extends AbstractSubNetwork {
         if (consumers.size() == 0) return;
 
         for (IEnergyStorage consumer : consumers) {
-            //TODO remove this placeholder and replace with tiered cables.
             long amount = Math.min(current.get(), Config.getEnergyTransfer(getTier()) / consumers.size());
             if (amount > Integer.MAX_VALUE) amount = Integer.MAX_VALUE;
             int received = consumer.receiveEnergy((int) amount, false);
@@ -80,7 +77,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
                     });
                 }
 
-                getLevel().getCapability(NetworkHandler.NETWORK).map(h -> h.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(neighbourPos))).ifPresent(subNetwork -> {
+                getLevel().getCapability(LevelNetworkHandler.NETWORK).map(h -> h.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(neighbourPos))).ifPresent(subNetwork -> {
                     if (subNetwork.isPresent()) nodesWithInventories.add(node);
                 });
 
@@ -103,7 +100,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
                     });
                 }
 
-                getLevel().getCapability(NetworkHandler.NETWORK).map(h -> h.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(neighbourPos))).ifPresent(subNetwork -> {
+                getLevel().getCapability(LevelNetworkHandler.NETWORK).map(h -> h.getSubnetFromPos(ForgeCapabilities.ENERGY, LevelNode.of(neighbourPos))).ifPresent(subNetwork -> {
                     if (subNetwork.isEmpty()) return;
                     AbstractSubNetwork subNet = subNetwork.get();
                     if (subNet != this && subNet instanceof EnergySubNetwork subNetwork1) {
@@ -152,7 +149,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     }
 
     @Override
-    public void mergeData(AbstractSubNetwork network) {
+    public void mergeData(BlockPos chosenPosition, AbstractSubNetwork network) {
         if (network instanceof EnergySubNetwork subNetwork) {
             this.storage.addEnergy(subNetwork.storage.energy);
         }

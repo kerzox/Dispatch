@@ -23,7 +23,7 @@ public class EnergyNetworkHandler extends AbstractNetwork<EnergySubNetwork> {
     }
 
     @Override
-    protected void splitData(EnergySubNetwork oldNetwork, List<EnergySubNetwork> newNetworks) {
+    protected void splitData(BlockPos pos, EnergySubNetwork oldNetwork, List<EnergySubNetwork> newNetworks) {
         long energyAmount = oldNetwork.getStorage().getEnergyStored();
         for (EnergySubNetwork subNetwork : newNetworks) {
             long received = subNetwork.getStorage().addEnergyWithReturn(energyAmount);

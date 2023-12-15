@@ -1,23 +1,19 @@
 package mod.kerzox.dispatch.common.item;
 
+import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.capability.NetworkHandler;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 public class DispatchItem extends BlockItem {
 
@@ -47,9 +43,9 @@ public class DispatchItem extends BlockItem {
     protected boolean placeBlock(BlockPlaceContext ctx, BlockState p_40579_) {
         if (ctx.getPlayer().isShiftKeyDown()) return false;
         if (super.placeBlock(ctx, p_40579_)) {
-            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
+            ctx.getLevel().getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability -> {
                 Player player = ctx.getPlayer();
-                if (capability instanceof NetworkHandler handler) {
+                if (capability instanceof LevelNetworkHandler handler) {
                     handler.createOrAttachToCapabilityNetwork(this.capability, this.tier, ctx.getClickedPos(), true);
                 }
             });
@@ -66,9 +62,9 @@ public class DispatchItem extends BlockItem {
     @Override
     public InteractionResult useOn(UseOnContext ctx) {
         if (!ctx.getLevel().isClientSide && ctx.getPlayer().isShiftKeyDown()) {
-            ctx.getLevel().getCapability(NetworkHandler.NETWORK).ifPresent(capability -> {
+            ctx.getLevel().getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability -> {
                 Player player = ctx.getPlayer();
-                if (capability instanceof NetworkHandler handler) {
+                if (capability instanceof LevelNetworkHandler handler) {
                     if (handler.getSubnetFromPos(this.capability, LevelNode.of(ctx.getClickedPos())).isEmpty()) {
                         handler.createOrAttachToCapabilityNetwork(this.capability, this.tier, ctx.getClickedPos(), true);
                         for (Direction direction : Direction.values()) {
