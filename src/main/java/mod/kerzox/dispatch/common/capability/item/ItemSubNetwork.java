@@ -73,6 +73,7 @@ public class ItemSubNetwork extends AbstractSubNetwork {
 
     @Override
     public void update() {
+        super.update();
         findInventories();
     }
 

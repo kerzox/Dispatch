@@ -2,7 +2,6 @@ package mod.kerzox.dispatch.client.component;
 
 import mod.kerzox.dispatch.client.gui.ICustomScreen;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -16,7 +15,7 @@ public class ToggleButtonComponent extends ButtonComponent {
     public void onClick(double mouseX, double mouseY, int button) {
         this.state = !state;
         playDownSound();
-        this.button.onPress(this);
+        this.button.onPress(this, button);
     }
 
     @Override

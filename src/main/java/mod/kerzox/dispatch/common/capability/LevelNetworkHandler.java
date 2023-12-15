@@ -1,13 +1,17 @@
 package mod.kerzox.dispatch.common.capability;
 
+import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.common.capability.energy.EnergyNetworkHandler;
 import mod.kerzox.dispatch.common.capability.fluid.FluidNetworkHandler;
 import mod.kerzox.dispatch.common.capability.item.ItemNetworkHandler;
 import mod.kerzox.dispatch.common.item.DispatchItem;
+import mod.kerzox.dispatch.common.network.OpenScreen;
+import mod.kerzox.dispatch.common.network.PacketHandler;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.capabilities.*;
@@ -48,6 +52,12 @@ public class LevelNetworkHandler implements ILevelNetwork, ICapabilitySerializab
         }
         if (!positionsAsNewCables.isEmpty()) {
             spawnCablesInWorld(positionsAsNewCables.poll());
+        }
+    }
+
+    public void openScreenAt(ServerPlayer player, BlockPos pos) {
+        if (!player.isShiftKeyDown() && !(player.getMainHandItem().getItem() instanceof DispatchItem)) {
+            if (!getSubnetsFrom(LevelNode.of(pos)).isEmpty()) PacketHandler.sendToClientPlayer(new OpenScreen(OpenScreen.Screens.CABLE_SCREEN, pos), player);
         }
     }
 
@@ -134,4 +144,6 @@ public class LevelNetworkHandler implements ILevelNetwork, ICapabilitySerializab
     public void addToSpawnInWorld(BlockPos pos) {
         positionsAsNewCables.add(pos);
     }
+
+
 }

@@ -109,7 +109,6 @@ public class DispatchRegistry {
     public static final class Items {
 
         public static Map<Capability<?>, Map<DispatchItem.Tiers, RegistryObject<Item>>> DISPATCH_CABLES = new HashMap<>();
-
         public static Map<DispatchItem.Tiers, RegistryObject<Item>> ENERGY_CABLES = new HashMap<>();
         public static Map<DispatchItem.Tiers, RegistryObject<Item>> ITEM_CABLES = new HashMap<>();
         public static Map<DispatchItem.Tiers, RegistryObject<Item>> FLUID_CABLES = new HashMap<>();

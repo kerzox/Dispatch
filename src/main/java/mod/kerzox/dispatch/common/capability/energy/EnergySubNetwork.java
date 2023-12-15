@@ -34,6 +34,9 @@ public class EnergySubNetwork extends AbstractSubNetwork {
         Add the gui screens to allow for config and then add insertion lists, extraction lists etc.
      */
 
+    private HashSet<LevelNode> nodesWithExtraction = new HashSet<>();
+    private HashSet<LevelNode> nodesWithInsertion = new HashSet<>();
+
     public EnergySubNetwork(EnergyNetworkHandler network, BlockPos pos, DispatchItem.Tiers tier) {
         super(network, ForgeCapabilities.ENERGY, tier, pos);
     }
@@ -41,6 +44,10 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     @Override
     public void tick() {
         AtomicInteger current = new AtomicInteger(this.storage.getEnergyStored());
+        // try to extract first
+        if (current.get() < this.storage.getMaxEnergyStored())
+            tryExtraction();
+
         if (current.get() <= 0) return;
 
         Set<IEnergyStorage> consumers = getAvailableConsumers();
@@ -62,11 +69,44 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     }
 
     /**
+     * Method loops through all the cables that are on extraction mode and checks if the direction is set to a extract
+     * If so then it will attempt to extract energy from this direction.
+     */
+
+    public void tryExtraction() {
+        for (LevelNode node : this.nodesWithExtraction) {
+            for (Direction direction : Direction.values()) {
+                if (node.getDirectionalIO().get(direction) == LevelNode.IOTypes.EXTRACT || node.getDirectionalIO().get(direction) == LevelNode.IOTypes.ALL) {
+                    BlockPos pos = node.getPos().relative(direction);
+                    BlockEntity blockEntity = getLevel().getBlockEntity(pos);
+                    if (blockEntity != null) {
+                        LazyOptional<IEnergyStorage> energyCapability = blockEntity.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite());
+                        energyCapability.ifPresent(cap -> {
+                            if (cap.canExtract() && cap.getEnergyStored() != 0) {
+                                long amount = Config.getEnergyTransfer(getTier());
+                                if (amount > Integer.MAX_VALUE) amount = Integer.MAX_VALUE;
+                                int simulated = cap.extractEnergy((int) amount, true);
+                                int toExtract = this.storage.receiveEnergy(simulated, true);
+                                this.storage.receiveEnergy(cap.extractEnergy(toExtract, false), false);
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Finds any valid inventory (energy capability) and adds the node next to it to nodesWithInventories set
      */
 
     private void findInventories() {
         for (LevelNode node : getNodes()) {
+
+            nodesWithExtraction.remove(node);
+            nodesWithInsertion.remove(node);
+            nodesWithInventories.remove(node);
+
             for (Direction direction : Direction.values()) {
                 BlockPos neighbourPos = node.getPos().relative(direction);
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
@@ -82,6 +122,15 @@ public class EnergySubNetwork extends AbstractSubNetwork {
                 });
 
             }
+
+            for (LevelNode.IOTypes type : node.getDirectionalIO().values()) {
+                if ((type == LevelNode.IOTypes.EXTRACT || type == LevelNode.IOTypes.ALL) && nodesWithInventories.contains(node))
+                    nodesWithExtraction.add(node);
+                if ((type == LevelNode.IOTypes.PUSH || type == LevelNode.IOTypes.ALL) && nodesWithInventories.contains(node))
+                    nodesWithInsertion.add(node);
+                if (type == LevelNode.IOTypes.NONE) nodesWithInventories.remove(node);
+            }
+
         }
     }
 
@@ -96,7 +145,8 @@ public class EnergySubNetwork extends AbstractSubNetwork {
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
                 if (be != null && !(be instanceof DynamicTilingEntity)) {
                     be.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite()).ifPresent(handler -> {
-                        if (handler.canReceive() && handler.getEnergyStored() < handler.getMaxEnergyStored()) consumers.add(handler);
+                        if (handler.canReceive() && handler.getEnergyStored() < handler.getMaxEnergyStored())
+                            consumers.add(handler);
                     });
                 }
 
@@ -104,7 +154,8 @@ public class EnergySubNetwork extends AbstractSubNetwork {
                     if (subNetwork.isEmpty()) return;
                     AbstractSubNetwork subNet = subNetwork.get();
                     if (subNet != this && subNet instanceof EnergySubNetwork subNetwork1) {
-                        if (subNetwork1.getStorage().getEnergyStored() < subNetwork1.getStorage().getMaxEnergyStored()) consumers.add(subNetwork1.getStorage());
+                        if (subNetwork1.getStorage().getEnergyStored() < subNetwork1.getStorage().getMaxEnergyStored())
+                            consumers.add(subNetwork1.getStorage());
                     }
                 });
 
@@ -115,7 +166,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     }
 
     @Override
-    protected void postAttachment(BlockPos pos) {
+    protected void postAttachment(LevelNode pos) {
         // change capacity based on number of cables
         storage.capacity = nodes.size() * Config.getEnergyCapacity(getTier());
         storage.maxExtract = storage.capacity;
@@ -154,4 +205,5 @@ public class EnergySubNetwork extends AbstractSubNetwork {
             this.storage.addEnergy(subNetwork.storage.energy);
         }
     }
+
 }

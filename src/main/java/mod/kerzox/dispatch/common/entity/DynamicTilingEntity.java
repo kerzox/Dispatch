@@ -58,6 +58,7 @@ public class DynamicTilingEntity extends SyncBlockEntity {
                         pPlayer.sendSystemMessage(Component.literal("Network: " + subNetwork));
                         pPlayer.sendSystemMessage(Component.literal("Network size: " + subNetwork.getNodes().size()));
                         //pPlayer.sendSystemMessage(Component.literal("Tag: " + subNetwork.serializeNBT()));
+                        pPlayer.sendSystemMessage(Component.literal("Node Data: " + subNetwork.getNodeByPosition(worldPosition).serialize()));
                         System.out.println(subNetwork.serializeNBT());
                     }
                 }

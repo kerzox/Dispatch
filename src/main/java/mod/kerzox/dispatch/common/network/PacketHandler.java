@@ -30,6 +30,11 @@ public class PacketHandler {
                 .decoder(LevelNetworkPacket::new)
                 .consumerMainThread(LevelNetworkPacket::handle)
                 .add();
+        INSTANCE.messageBuilder(OpenScreen.class, nextID())
+                .encoder(OpenScreen::toBytes)
+                .decoder(OpenScreen::new)
+                .consumerMainThread(OpenScreen::handle)
+                .add();
     }
 
     public static void sendToClientPlayer(Object packet, ServerPlayer player) {

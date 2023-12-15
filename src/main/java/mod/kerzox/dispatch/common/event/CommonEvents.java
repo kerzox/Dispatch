@@ -6,11 +6,17 @@ import mod.kerzox.dispatch.common.capability.LevelNode;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.ClickEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
+
+import java.util.Objects;
 
 public class CommonEvents {
     public static int serverTick;
@@ -103,6 +109,17 @@ public class CommonEvents {
                 preVclientRenderTick = clientRenderTick;
             }
         }
+    }
+
+    @SubscribeEvent
+    public void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        Level level = event.getLevel();
+        Player player = event.getEntity();
+
+        if (!level.isClientSide) {
+            if (player instanceof ServerPlayer player1) Objects.requireNonNull(LevelNetworkHandler.getHandler(level)).openScreenAt(player1, event.getPos());
+        }
+
     }
 
     @SubscribeEvent

@@ -3,6 +3,7 @@ package mod.kerzox.dispatch.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import mod.kerzox.dispatch.client.render.DispatchRenderTypes;
+import mod.kerzox.dispatch.client.render.RenderingUtil;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
@@ -87,9 +88,7 @@ public class RenderLevelNetworks {
                                     BlockPos cablePos = node.getPos();
                                     if (level.getBlockEntity(cablePos) != null) continue;
                                     if (calculateDistance(position.getX(), position.getY(), position.getZ(), cablePos.getX(), cablePos.getY(), cablePos.getZ()) < radius) {
-                                        float red = subNetwork instanceof EnergySubNetwork ? 0 : 1;
-                                        float green = subNetwork instanceof EnergySubNetwork ? 1 : 0;
-                                        float blue = 0;
+                                        float[] colours = RenderingUtil.convertColor(subNetwork.getRenderingColour());
                                         ForgeModelBlockRenderer renderer = (ForgeModelBlockRenderer) Minecraft.getInstance().getBlockRenderer().getModelRenderer();
                                         Direction facing = player.getDirection();
                                         BlockPos relative = node.getPos().relative(player.getDirection()).above();
@@ -106,7 +105,7 @@ public class RenderLevelNetworks {
                                                 node.getPos().getZ(),
                                                 node.getPos().getX() + 1,
                                                 node.getPos().getY() + 1,
-                                                node.getPos().getZ() + 1, red, green, blue, 1.0F);
+                                                node.getPos().getZ() + 1, colours[0], colours[1], colours[2], 1.0F);
 
 
                                         RenderSystem.disableDepthTest();

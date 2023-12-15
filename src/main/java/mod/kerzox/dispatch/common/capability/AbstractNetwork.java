@@ -53,6 +53,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
         if (!toRemove.isEmpty()) {
             T network = toRemove.poll();
             this.subNetworks.remove(network);
+            network.getHandler(null).invalidate();
         }
 
         tick();
@@ -191,8 +192,15 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
             // old subnet detach (mostly a precaution)
             old.detach(pos);
 
+            LevelNode node = new LevelNode(tag);
+
+            // read the tag data for this node as the next attachment function will skip this node
+            if (node.getPos().equals(startingFrom)) separated.getNodeByPosition(startingFrom).read(tag);
+
             // now attach this position to our newly created subnet.
-            separated.attach(new LevelNode(tag));
+            separated.attach(node);
+
+
         }
 
         return separated;
@@ -346,6 +354,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
     protected T createNetworkFromTag(CompoundTag tag) {
         T network = createSubnetAtPosition(DispatchItem.Tiers.valueOf(tag.getString("tier").toUpperCase()), BlockPos.ZERO);
         network.deserializeNBT(tag);
+        network.update();
         return network;
     }
 

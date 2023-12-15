@@ -3,6 +3,7 @@ package mod.kerzox.dispatch;
 import com.mojang.logging.LogUtils;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.event.CommonEvents;
+import mod.kerzox.dispatch.common.item.DispatchItem;
 import mod.kerzox.dispatch.common.network.PacketHandler;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.resources.ResourceLocation;
@@ -24,6 +25,8 @@ import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 import org.slf4j.Logger;
+
+import java.util.Map;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(Dispatch.MODID)
@@ -95,11 +98,10 @@ public class Dispatch
     public void addCreative(BuildCreativeModeTabContentsEvent event)
     {
         if (event.getTabKey() == DispatchRegistry.TAB.getKey()) {
-            for (RegistryObject<Item> item : DispatchRegistry.Items.ENERGY_CABLES.values()) {
-                event.accept(item.get());
-            }
-            for (RegistryObject<Item> item : DispatchRegistry.Items.ITEM_CABLES.values()) {
-                event.accept(item.get());
+            for (Map<DispatchItem.Tiers, RegistryObject<Item>> tieredCables : DispatchRegistry.Items.DISPATCH_CABLES.values()) {
+                for (RegistryObject<Item> item : tieredCables.values()) {
+                    event.accept(item.get());
+                }
             }
         }
     }

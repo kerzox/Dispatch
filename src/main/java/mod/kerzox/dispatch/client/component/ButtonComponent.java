@@ -26,8 +26,13 @@ public class ButtonComponent extends TexturedWidgetComponent {
     @Override
     public void onClick(double mouseX, double mouseY, int button) {
         playDownSound();
-        this.button.onPress(this);
+        this.button.onPress(this, button);
         tick = 1 + CommonEvents.getClientTick();
+    }
+
+    @Override
+    protected boolean isValidClickButton(int p_93652_) {
+        return true;
     }
 
     @Override
@@ -60,7 +65,7 @@ public class ButtonComponent extends TexturedWidgetComponent {
     }
 
     public interface IPressable {
-        void onPress(ButtonComponent button);
+        void onPress(ButtonComponent button, int i);
     }
 
 }

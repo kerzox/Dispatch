@@ -16,11 +16,11 @@ public class LevelNode {
 
     public enum IOTypes implements StringRepresentable {
 
-        DEFAULT("default"),
-        PUSH("push"),
-        EXTRACT("extract"),
-        ALL("all"),
-        NONE("none");
+        DEFAULT("default"), // normal
+        PUSH("push"), // output
+        EXTRACT("extract"), // input
+        ALL("all"), // combined
+        NONE("none"); // no connection
 
         String name;
 
