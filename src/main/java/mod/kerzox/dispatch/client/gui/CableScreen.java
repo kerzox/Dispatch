@@ -15,6 +15,7 @@ import mod.kerzox.dispatch.common.network.PacketHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -92,8 +93,8 @@ public class CableScreen extends Screen implements ICustomScreen {
     }
 
 
-    public static void draw(LevelNode node) {
-        Minecraft.getInstance().setScreen(new CableScreen(node));
+    public static void draw(BlockPos node) {
+        Minecraft.getInstance().setScreen(new CableScreen(LevelNode.of(node)));
     }
 
     @Override
@@ -185,10 +186,17 @@ public class CableScreen extends Screen implements ICustomScreen {
             button.setCurrentSetting(LevelNode.IOTypes.values()[index]);
         }
 
-        node.getDirectionalIO().put(direction, button.getCurrentSetting());
-        if (currentSubNetworkActive != null) {
-            PacketHandler.sendToServer(LevelNetworkPacket.of(currentSubNetworkActive.getCapability(), node));
-        }
+        LevelNetworkHandler.getHandler(level).getSubnetFromPos(currentSubNetworkActive.getCapability(), node).ifPresent(subNetwork -> {
+
+            // get the node from the level
+            LevelNode node1 = new LevelNode(subNetwork.getNodeByPosition(node.getPos()).serialize());
+            node1.getDirectionalIO().put(direction, button.getCurrentSetting());
+
+            if (currentSubNetworkActive != null) {
+                PacketHandler.sendToServer(LevelNetworkPacket.of(currentSubNetworkActive.getCapability(), node1));
+            }
+        });
+
 
     }
 

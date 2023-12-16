@@ -144,4 +144,5 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
 
     public abstract void mergeData(BlockPos positionBeingMerged, AbstractSubNetwork network);
 
+
 }

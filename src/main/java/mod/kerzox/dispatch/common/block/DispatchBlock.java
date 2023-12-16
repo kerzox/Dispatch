@@ -80,21 +80,25 @@ public class DispatchBlock extends Block implements EntityBlock {
                         // TODO expand this for the io so if all subnets are set to none dont show visual connection
 
                         for (AbstractSubNetwork subNetwork : network.getSubnetsFrom(LevelNode.of(pPos))) {
+
+                            LevelNode node = subNetwork.getNodeByPosition(pPos);
                             // check for other block entities and or get another cable and update it visually
                             if (blockEntity != null && !(blockEntity instanceof DynamicTilingEntity)) {
                                 LazyOptional<?> capability = blockEntity.getCapability(subNetwork.getCapability(), direction.getOpposite());
-                                if (capability.isPresent()) {
+                                if (capability.isPresent() && node.getDirectionalIO().get(direction) != LevelNode.IOTypes.NONE) {
                                     notified.addVisualConnection(direction);
                                 }
                             }
 
                             Optional<AbstractSubNetwork> otherSubnet = network.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pPos.relative(direction)));
 
-                            if (otherSubnet.isPresent() && subNetwork.getTier() == otherSubnet.get().getTier()) {
+                            if (otherSubnet.isPresent() && subNetwork.getTier() == otherSubnet.get().getTier() && node.getDirectionalIO().get(direction) != LevelNode.IOTypes.NONE) {
                                 if (blockEntity instanceof DynamicTilingEntity dynamicTilingEntity) {
-                                    dynamicTilingEntity.addVisualConnection(direction.getOpposite());
+                                    if (otherSubnet.get().getNodeByPosition(dynamicTilingEntity.getBlockPos()).getDirectionalIO().get(direction.getOpposite()) != LevelNode.IOTypes.NONE) {
+                                        dynamicTilingEntity.addVisualConnection(direction.getOpposite());
+                                        notified.addVisualConnection(direction);
+                                    }
                                 }
-                                notified.addVisualConnection(direction);
                             }
 
                         }
@@ -120,18 +124,29 @@ public class DispatchBlock extends Block implements EntityBlock {
                     if (blockEntity != null) {
                         BlockPos pos1 = pPos.subtract(pFromPos);
                         LazyOptional<?> capability = blockEntity.getCapability(subNetwork.getCapability());
-                        if (capability.isPresent() && !(blockEntity instanceof DynamicTilingEntity)) {
+
+                        LevelNode node = subNetwork.getNodeByPosition(pPos);
+
+                        if (capability.isPresent() && !(blockEntity instanceof DynamicTilingEntity) && node.getDirectionalIO().get(facing) != LevelNode.IOTypes.NONE) {
                             notifiedPipe.addVisualConnection(facing);
                             capability.addListener(l -> notifiedPipe.removeVisualConnection(facing));
+                        } else {
+                            notifiedPipe.removeVisualConnection(facing);
                         }
 
-                        Optional<AbstractSubNetwork> otherSubnet = capability1.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pos1));
+                        Optional<AbstractSubNetwork> otherSubnet = capability1.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pFromPos));
 
-                        if (otherSubnet.isPresent() && subNetwork.getTier() == otherSubnet.get().getTier()) {
+                        if (otherSubnet.isPresent() && subNetwork.getTier() == otherSubnet.get().getTier() && node.getDirectionalIO().get(facing) != LevelNode.IOTypes.NONE) {
                             if (blockEntity instanceof DynamicTilingEntity dynamicTilingEntity) {
-                                dynamicTilingEntity.addVisualConnection(facing.getOpposite());
+                                if (otherSubnet.get().getNodeByPosition(dynamicTilingEntity.getBlockPos()).getDirectionalIO().get(facing.getOpposite()) != LevelNode.IOTypes.NONE) {
+                                    dynamicTilingEntity.addVisualConnection(facing.getOpposite());
+                                    notifiedPipe.addVisualConnection(facing);
+                                } else {
+                                    dynamicTilingEntity.removeVisualConnection(facing.getOpposite());
+                                    notifiedPipe.removeVisualConnection(facing);
+                                }
                             }
-                            notifiedPipe.addVisualConnection(facing);
+
                         }
 
                     } else {

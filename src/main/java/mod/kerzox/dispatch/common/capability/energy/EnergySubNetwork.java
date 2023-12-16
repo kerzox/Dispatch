@@ -28,12 +28,6 @@ public class EnergySubNetwork extends AbstractSubNetwork {
 
     // Nodes that have inventories around them
     private HashSet<LevelNode> nodesWithInventories = new HashSet<>();
-
-    /*
-        TODO
-        Add the gui screens to allow for config and then add insertion lists, extraction lists etc.
-     */
-
     private HashSet<LevelNode> nodesWithExtraction = new HashSet<>();
     private HashSet<LevelNode> nodesWithInsertion = new HashSet<>();
 

@@ -26,6 +26,8 @@ public class FluidSubNetwork extends AbstractSubNetwork {
 
     // Nodes that have inventories around them
     private HashSet<LevelNode> nodesWithInventories = new HashSet<>();
+    private HashSet<LevelNode> nodesWithExtraction = new HashSet<>();
+    private HashSet<LevelNode> nodesWithInsertion = new HashSet<>();
 
     public FluidSubNetwork(AbstractNetwork<?> network, DispatchItem.Tiers tier, BlockPos pos) {
         super(network, ForgeCapabilities.FLUID_HANDLER, tier, pos);

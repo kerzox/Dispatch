@@ -1,5 +1,6 @@
 package mod.kerzox.dispatch.common.capability.item;
 
+import mezz.jei.forge.platform.ItemStackHelper;
 import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
@@ -20,6 +21,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 
 import java.util.ArrayList;
@@ -40,6 +42,8 @@ public class ItemSubNetwork extends AbstractSubNetwork {
 
     // Nodes that have inventories around them
     private HashSet<LevelNode> nodesWithInventories = new HashSet<>();
+    private HashSet<LevelNode> nodesWithExtraction = new HashSet<>();
+    private HashSet<LevelNode> nodesWithInsertion = new HashSet<>();
 
     public ItemSubNetwork(AbstractNetwork<?> network, BlockPos pos, DispatchItem.Tiers tier) {
         super(network, ForgeCapabilities.ITEM_HANDLER, tier, pos);
@@ -48,6 +52,11 @@ public class ItemSubNetwork extends AbstractSubNetwork {
     @Override
     public void tick() {
         ItemStack inventoryStack = itemStackHandler.getStackInSlot(0).copy();
+
+        // try to extract first
+        if (inventoryStack.getCount() < itemStackHandler.getSlotLimit(0))
+            tryExtraction();
+
         if (inventoryStack.isEmpty()) return;
 
         List<IItemHandler> consumers = getAvailableConsumers();
@@ -59,12 +68,12 @@ public class ItemSubNetwork extends AbstractSubNetwork {
             int maxInsert = Math.min(8, inventoryStack.getCount());
 
             for (int i = 0; i < consumer.getSlots(); i++) {
-                ItemStack insertStack =  inventoryStack.copyWithCount(maxInsert);
+                ItemStack insertStack =  itemStackHandler.extractItem(0, maxInsert, true);
                 ItemStack ret = consumer.insertItem(i, insertStack, false);
-                inventoryStack.shrink(insertStack.getCount() - ret.getCount());
-                itemStackHandler.setStackInSlot(0, inventoryStack);
-                // if the return is empty (full insertion we want to finish this tick
+                itemStackHandler.extractItem(0, maxInsert, false);
                 if (ret.isEmpty()) return;
+                itemStackHandler.insertItem(0, ret, false);
+
             }
 
         }
@@ -73,7 +82,6 @@ public class ItemSubNetwork extends AbstractSubNetwork {
 
     @Override
     public void update() {
-        super.update();
         findInventories();
     }
 
@@ -84,6 +92,11 @@ public class ItemSubNetwork extends AbstractSubNetwork {
 
     private void findInventories() {
         for (LevelNode node : getNodes()) {
+
+            nodesWithExtraction.remove(node);
+            nodesWithInsertion.remove(node);
+            nodesWithInventories.remove(node);
+
             for (Direction direction : Direction.values()) {
                 BlockPos neighbourPos = node.getPos().relative(direction);
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
@@ -98,6 +111,42 @@ public class ItemSubNetwork extends AbstractSubNetwork {
                     if (subNetwork.isPresent()) nodesWithInventories.add(node);
                 });
 
+                for (LevelNode.IOTypes type : node.getDirectionalIO().values()) {
+                    if ((type == LevelNode.IOTypes.EXTRACT || type == LevelNode.IOTypes.ALL) && nodesWithInventories.contains(node))
+                        nodesWithExtraction.add(node);
+                    if ((type == LevelNode.IOTypes.PUSH || type == LevelNode.IOTypes.ALL) && nodesWithInventories.contains(node))
+                        nodesWithInsertion.add(node);
+                    if (type == LevelNode.IOTypes.NONE) nodesWithInventories.remove(node);
+                }
+
+            }
+        }
+    }
+
+    public void tryExtraction() {
+        for (LevelNode node : this.nodesWithExtraction) {
+            for (Direction direction : Direction.values()) {
+                if (node.getDirectionalIO().get(direction) == LevelNode.IOTypes.EXTRACT || node.getDirectionalIO().get(direction) == LevelNode.IOTypes.ALL) {
+                    BlockPos pos = node.getPos().relative(direction);
+                    BlockEntity blockEntity = getLevel().getBlockEntity(pos);
+                    if (blockEntity != null) {
+                        LazyOptional<IItemHandler> energyCapability = blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite());
+                        energyCapability.ifPresent(cap -> {
+
+                            for (int i = 0; i < cap.getSlots(); i++) {
+                                ItemStack stack = cap.getStackInSlot(i);
+                                if (stack.isEmpty()) continue;
+
+                                stack = stack.copyWithCount(Math.min(8, stack.getCount()));
+
+                                if (itemStackHandler.insertItem(0, stack, true).isEmpty()) {
+                                    itemStackHandler.insertItem(0, cap.extractItem(i, stack.getCount(), false), false);
+                                }
+                            }
+
+                        });
+                    }
+                }
             }
         }
     }
@@ -107,6 +156,8 @@ public class ItemSubNetwork extends AbstractSubNetwork {
         for (LevelNode node : nodesWithInventories) {
             BlockPos position = node.getPos();
             for (Direction direction : Direction.values()) {
+                if (!(node.getDirectionalIO().get(direction) == LevelNode.IOTypes.ALL || node.getDirectionalIO().get(direction) == LevelNode.IOTypes.PUSH
+                || node.getDirectionalIO().get(direction) == LevelNode.IOTypes.DEFAULT)) continue;
                 BlockPos neighbourPos = position.relative(direction);
 
                 // check for block entities

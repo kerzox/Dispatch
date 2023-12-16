@@ -11,7 +11,7 @@ public class OpenScreenClient {
 
     public static void handleOnClient(OpenScreen packet, Supplier<NetworkEvent.Context> ctx) {
         switch (packet.getScreen()) {
-            case CABLE_SCREEN -> CableScreen.draw(new LevelNode(packet.getPos()));
+            case CABLE_SCREEN -> CableScreen.draw(packet.getPos());
         }
     }
 

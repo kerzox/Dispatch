@@ -3,6 +3,8 @@ package mod.kerzox.dispatch.common.capability;
 import net.minecraft.core.BlockPos;
 
 import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class NodeList {
 
@@ -39,6 +41,10 @@ public class NodeList {
 
     public HashSet<LevelNode> getNodes() {
         return nodes;
+    }
+
+    public Set<BlockPos> getNodesAsPositions() {
+        return nodes.stream().map(LevelNode::getPos).collect(Collectors.toSet());
     }
 
     public LevelNode getByPos(BlockPos pos) {

@@ -1,6 +1,5 @@
 package mod.kerzox.dispatch.common.capability;
 
-import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.common.capability.energy.EnergyNetworkHandler;
 import mod.kerzox.dispatch.common.capability.fluid.FluidNetworkHandler;
 import mod.kerzox.dispatch.common.capability.item.ItemNetworkHandler;
