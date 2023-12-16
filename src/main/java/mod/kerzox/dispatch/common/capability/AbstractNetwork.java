@@ -260,49 +260,6 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
 
         return separated;
     }
-    /*
-            List<T> newNetworks = new ArrayList<>();
-
-        newNode.getDirectionalIO().forEach((direction, ioTypes) -> {
-            // check each io face if they are set to none and the previous version of this node is now different
-            if (ioTypes == LevelNode.IOTypes.NONE && oldNode.getDirectionalIO().get(direction) != ioTypes) {
-
-                // in every direction
-                for (Direction direction1 : Direction.values()) {
-
-                    // get the block position of a neighbour then check whether our subnet contains this neighbour
-                    BlockPos neighbour = newNode.getPos().relative(direction1);
-                    if (subNetwork.contains(neighbour)) {
-                        // add to the new subnet list from the return of separateNetworks function
-
-                        T newNet = separateNetworks(subNetwork, neighbour);
-                        if (!newNet.nodes.getNodesAsPositions().containsAll(subNetwork.nodes.getNodesAsPositions())) newNetworks.add(newNet);
-                    }
-
-                }
-            }
-            // if the face type is different and we were previously a NONE then we can potentially reconnect a network
-            if (ioTypes != oldNode.getDirectionalIO().get(direction) && oldNode.getDirectionalIO().get(direction) == LevelNode.IOTypes.NONE) {
-                createOrAttachToWithNodeData(subNetwork.tier, newNode, true);
-            }
-        });
-
-        if (!newNetworks.isEmpty()) {
-            splitData(oldNode.getPos(), subNetwork, newNetworks);
-
-            subNetwork.getNodes().clear();
-
-            // remove the subnet
-            getSubNetworks().remove(subNetwork);
-
-            // add the new ones
-            getSubNetworks().addAll(newNetworks);
-        }
-
-        if (getSubNetworks().stream().noneMatch(n->n.contains(newNode.getPos()))) {
-            createOrAttachToWithNodeData(subNetwork.tier, newNode, false);
-        }
-     */
 
     public void updateNetwork(LevelNode oldNode, LevelNode newNode) {
         T subNetwork = this.getSubnetByPosition(newNode);

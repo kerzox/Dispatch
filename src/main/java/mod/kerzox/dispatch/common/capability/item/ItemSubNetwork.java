@@ -91,24 +91,24 @@ public class ItemSubNetwork extends AbstractSubNetwork {
      */
 
     private void findInventories() {
+
+        nodesWithExtraction.clear();
+        nodesWithInsertion.clear();
+        nodesWithInventories.clear();
+
         for (LevelNode node : getNodes()) {
-
-            nodesWithExtraction.remove(node);
-            nodesWithInsertion.remove(node);
-            nodesWithInventories.remove(node);
-
             for (Direction direction : Direction.values()) {
                 BlockPos neighbourPos = node.getPos().relative(direction);
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
 
-                if (be != null) {
+                if (be != null && !(be instanceof DynamicTilingEntity)) {
                     be.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).ifPresent(handler -> {
                         nodesWithInventories.add(node);
                     });
                 }
 
                 getLevel().getCapability(LevelNetworkHandler.NETWORK).map(h -> h.getSubnetFromPos(ForgeCapabilities.ITEM_HANDLER, LevelNode.of(neighbourPos))).ifPresent(subNetwork -> {
-                    if (subNetwork.isPresent()) nodesWithInventories.add(node);
+                    if (subNetwork.isPresent() && subNetwork.get() != this) nodesWithInventories.add(node);
                 });
 
                 for (LevelNode.IOTypes type : node.getDirectionalIO().values()) {
