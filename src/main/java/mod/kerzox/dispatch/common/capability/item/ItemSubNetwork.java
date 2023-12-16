@@ -1,12 +1,9 @@
 package mod.kerzox.dispatch.common.capability.item;
 
-import mezz.jei.forge.platform.ItemStackHelper;
-import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.capability.energy.EnergySubNetwork;
 import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
@@ -19,15 +16,12 @@ import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /*
     TODO
@@ -207,7 +201,7 @@ public class ItemSubNetwork extends AbstractSubNetwork {
     }
 
     @Override
-    public <T> LazyOptional<T> getHandler(Direction side) {
+    public <T> LazyOptional<T> getHandler(BlockPos worldPosition, Direction side) {
         return handlerLazyOptional.cast();
     }
 

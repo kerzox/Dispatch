@@ -70,10 +70,8 @@ public class DispatchItem extends BlockItem {
                         for (Direction direction : Direction.values()) {
                             BlockPos pos = ctx.getClickedPos().relative(direction);
                             if (ctx.getLevel().getBlockEntity(pos) instanceof DynamicTilingEntity entity) {
-                                entity.addVisualConnection(direction.getOpposite());
-                                if (ctx.getLevel().getBlockEntity(ctx.getClickedPos()) instanceof DynamicTilingEntity us) {
-                                    us.addVisualConnection(direction);
-                                }
+                                entity.updateVisualConnections();
+                                ctx.getLevel().updateNeighborsAt(entity.getBlockPos(), entity.getBlockState().getBlock());
                             }
                         }
                     }

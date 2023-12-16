@@ -136,6 +136,15 @@ public class CableScreen extends Screen implements ICustomScreen {
                             Component.literal("Back"), dir[1], (button, i) -> handleButtonClick((IOHandlerButton) button, dir[1], i))));
                 }
             });
+
+            for (Pair<Direction, IOHandlerButton> buttonPair : ioButtons.get(network.getCapability())) {
+                addRenderableWidget(buttonPair.getSecond());
+                buttonPair.getSecond().setVisible(false);
+                LevelNetworkHandler.getHandler(level).getSubnetFromPos(network.getCapability(), node).ifPresent(subNetwork -> {
+                    buttonPair.getSecond().setCurrentSetting(subNetwork.getNodeByPosition(node.getPos()).getDirectionalIO().get(buttonPair.getFirst()));
+                });
+            }
+
         }
 
         for (ToggleButtonComponent capabilityButton : capabilityButtons) {
@@ -144,16 +153,6 @@ public class CableScreen extends Screen implements ICustomScreen {
 
         capabilityButtons.get(0).setState(true);
         currentSubNetworkActive = capabilityButtons.get(0).getSubNetwork();
-
-        for (List<Pair<Direction, IOHandlerButton>> buttons : ioButtons.values()) {
-            buttons.forEach(button-> {
-                addRenderableWidget(button.getSecond());
-                button.getSecond().setVisible(false);
-                LevelNetworkHandler.getHandler(level).getSubnetFromPos(currentSubNetworkActive.getCapability(), node).ifPresent(subNetwork -> {
-                    button.getSecond().setCurrentSetting(subNetwork.getNodeByPosition(node.getPos()).getDirectionalIO().get(button.getFirst()));
-                });
-            });
-        }
 
         for (Pair<Direction, IOHandlerButton> buttonPair : ioButtons.get(capabilityButtons.get(0).getSubNetwork().getCapability())) {
             buttonPair.getSecond().setVisible(true);

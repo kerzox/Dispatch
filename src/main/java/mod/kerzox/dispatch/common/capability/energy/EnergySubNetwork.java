@@ -134,6 +134,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
         for (LevelNode node : nodesWithInventories) {
             BlockPos position = node.getPos();
             for (Direction direction : Direction.values()) {
+                if (node.getDirectionalIO().get(direction) == LevelNode.IOTypes.EXTRACT) continue;
                 BlockPos neighbourPos = position.relative(direction);
 
                 // check for block entities
@@ -186,8 +187,13 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     }
 
     @Override
-    public <T> LazyOptional<T> getHandler(Direction side) {
-        return handler.cast();
+    public <T> LazyOptional<T> getHandler(BlockPos worldPosition, Direction side) {
+
+        // for invalidation
+        if (worldPosition == null) return handler.cast();
+
+        if (getNodeByPosition(worldPosition).getDirectionalIO().get(side) != LevelNode.IOTypes.NONE) return handler.cast();
+        else return LazyOptional.empty();
     }
 
     public ForgeEnergyStorage getStorage() {

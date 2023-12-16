@@ -12,6 +12,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.Capability;
@@ -44,25 +45,25 @@ public class DynamicTilingEntity extends SyncBlockEntity {
     @Override
     public boolean onPlayerClick(Level pLevel, Player pPlayer, BlockPos pPos, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide && pHand == InteractionHand.MAIN_HAND) {
-            pLevel.getCapability(LevelNetworkHandler.NETWORK).ifPresent(cap -> {
-                if (cap instanceof LevelNetworkHandler networkHandler) {
-
-                    int total = 0;
-                    for (AbstractNetwork<?> network : networkHandler.getNetworkMap().values()) {
-                        total += network.getSubNetworks().size();
-                    }
-
-                    pPlayer.sendSystemMessage(Component.literal("Total Subnet Count: " + total));
-                    pPlayer.sendSystemMessage(Component.literal("Subnets at this position: " + networkHandler.getSubnetsFrom(LevelNode.of(pPos)).size()));
-                    for (AbstractSubNetwork subNetwork : networkHandler.getSubnetsFrom(LevelNode.of(pPos))) {
-                        pPlayer.sendSystemMessage(Component.literal("Network: " + subNetwork));
-                        pPlayer.sendSystemMessage(Component.literal("Network size: " + subNetwork.getNodes().size()));
-                        //pPlayer.sendSystemMessage(Component.literal("Tag: " + subNetwork.serializeNBT()));
-                        pPlayer.sendSystemMessage(Component.literal("Node Data: " + subNetwork.getNodeByPosition(worldPosition).serialize()));
-                        System.out.println(subNetwork.serializeNBT());
-                    }
-                }
-            });
+//            pLevel.getCapability(LevelNetworkHandler.NETWORK).ifPresent(cap -> {
+//                if (cap instanceof LevelNetworkHandler networkHandler) {
+//
+//                    int total = 0;
+//                    for (AbstractNetwork<?> network : networkHandler.getNetworkMap().values()) {
+//                        total += network.getSubNetworks().size();
+//                    }
+//
+//                    pPlayer.sendSystemMessage(Component.literal("Total Subnet Count: " + total));
+//                    pPlayer.sendSystemMessage(Component.literal("Subnets at this position: " + networkHandler.getSubnetsFrom(LevelNode.of(pPos)).size()));
+//                    for (AbstractSubNetwork subNetwork : networkHandler.getSubnetsFrom(LevelNode.of(pPos))) {
+//                        pPlayer.sendSystemMessage(Component.literal("Network: " + subNetwork));
+//                        pPlayer.sendSystemMessage(Component.literal("Network size: " + subNetwork.getNodes().size()));
+//                        //pPlayer.sendSystemMessage(Component.literal("Tag: " + subNetwork.serializeNBT()));
+//                        pPlayer.sendSystemMessage(Component.literal("Node Data: " + subNetwork.getNodeByPosition(worldPosition).serialize()));
+//                        System.out.println(subNetwork.serializeNBT());
+//                    }
+//                }
+//            });
         }
         return super.onPlayerClick(pLevel, pPlayer, pPos, pHand, pHit);
     }
@@ -73,11 +74,48 @@ public class DynamicTilingEntity extends SyncBlockEntity {
         if (levelNetworkLazyOptional.resolve().isPresent()) {
             if (levelNetworkLazyOptional.resolve().get() instanceof LevelNetworkHandler handler) {
                 Optional<AbstractSubNetwork> subNetwork = handler.getSubnetFromPos(cap, LevelNode.of(worldPosition));
-                if (subNetwork.isPresent()) return subNetwork.get().getHandler(side);
+                if (subNetwork.isPresent()) return subNetwork.get().getHandler(worldPosition, side);
             }
         }
 
         return super.getCapability(cap, side);
+    }
+
+    public void updateVisualConnections() {
+
+        for (Direction direction : Direction.values()) {
+            removeVisualConnection(direction);
+        }
+
+        for (AbstractSubNetwork subNetwork : LevelNetworkHandler.getHandler(level).getSubnetsFrom(LevelNode.of(worldPosition))) {
+            for (Direction direction : Direction.values()) {
+
+                if (subNetwork.getNodeByPosition(worldPosition).getDirectionalIO().get(direction) == LevelNode.IOTypes.NONE) continue;
+
+                BlockPos neighbour = worldPosition.relative(direction);
+                BlockEntity be = level.getBlockEntity(neighbour);
+
+                if (be != null && !(be instanceof DynamicTilingEntity)) {
+                    // show a visual connection
+                    if (be.getCapability(subNetwork.getCapability()).isPresent()) addVisualConnection(direction);
+                }
+
+                LevelNetworkHandler.getHandler(level).getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(neighbour)).ifPresent(otherSub -> {
+
+                    if (otherSub.getNodeByPosition(neighbour).getDirectionalIO().get(direction.getOpposite()) != LevelNode.IOTypes.NONE) {
+                        addVisualConnection(direction);
+//
+//                        if (be instanceof DynamicTilingEntity dynamicTilingEntity) {
+//                            dynamicTilingEntity.addVisualConnection(direction.getOpposite());
+//                        }
+
+                    }
+
+                });
+
+            }
+        }
+
     }
 
     public void addVisualConnection(Direction facing) {

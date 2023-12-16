@@ -76,7 +76,10 @@ public class LevelNetworkPacket {
                                             subNetwork.getNodeByPosition(node.getPos()).read(data.getCompound("node"));
                                             subNetwork.update();
                                             network.getNetworkByCapability(subNetwork.getCapability()).updateNetwork(oldNode, node);
-                                            if (level.getBlockEntity(oldNode.getPos()) instanceof DynamicTilingEntity tilingEntity) level.updateNeighborsAt(tilingEntity.getBlockPos(), tilingEntity.getBlockState().getBlock());
+                                            if (level.getBlockEntity(oldNode.getPos()) instanceof DynamicTilingEntity tilingEntity) {
+                                                tilingEntity.updateVisualConnections();
+                                                level.updateNeighborsAt(tilingEntity.getBlockPos(), tilingEntity.getBlockState().getBlock());
+                                            }
                                         }
                                 );
                             }

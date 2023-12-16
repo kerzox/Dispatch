@@ -47,10 +47,7 @@ public class RenderLevelNetworks {
         double deltaX = x2 - x1;
         double deltaY = y2 - y1;
         double deltaZ = z2 - z1;
-
-        double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
-
-        return distance;
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ);
     }
 
     private List<BakedQuad> getQuads(BakedModel model, BlockPos pos, Direction side, RenderType type) {

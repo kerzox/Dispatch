@@ -54,7 +54,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
         if (!toRemove.isEmpty()) {
             T network = toRemove.poll();
             this.subNetworks.remove(network);
-            network.getHandler(null).invalidate();
+            network.getHandler(null, null).invalidate();
         }
 
         tick();

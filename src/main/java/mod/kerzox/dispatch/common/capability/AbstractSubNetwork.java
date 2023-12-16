@@ -10,6 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.INBTSerializable;
 import net.minecraftforge.common.util.LazyOptional;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 
@@ -140,7 +141,7 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
 
     public abstract int getRenderingColour();
 
-    public abstract <T> LazyOptional<T> getHandler(Direction side);
+    public abstract <T> LazyOptional<T> getHandler(@Nullable BlockPos worldPosition, Direction side);
 
     public abstract void mergeData(BlockPos positionBeingMerged, AbstractSubNetwork network);
 

@@ -71,43 +71,9 @@ public class DispatchBlock extends Block implements EntityBlock {
     @Override
     public void onPlace(BlockState state, Level pLevel, BlockPos pPos, BlockState pState, boolean moving) {
         if (pLevel.getBlockEntity(pPos) instanceof DynamicTilingEntity notified) {
+            notified.updateVisualConnections();
             for (Direction direction : Direction.values()) {
-
-                pLevel.getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability1 -> {
-                    if (capability1 instanceof LevelNetworkHandler network) {
-
-                        BlockEntity blockEntity = pLevel.getBlockEntity(pPos.relative(direction));
-
-                        // TODO expand this for the io so if all subnets are set to none dont show visual connection
-
-                        for (AbstractSubNetwork subNetwork : network.getSubnetsFrom(LevelNode.of(pPos))) {
-
-                            LevelNode node = subNetwork.getNodeByPosition(pPos);
-                            // check for other block entities and or get another cable and update it visually
-                            if (blockEntity != null && !(blockEntity instanceof DynamicTilingEntity)) {
-                                LazyOptional<?> capability = blockEntity.getCapability(subNetwork.getCapability(), direction.getOpposite());
-                                if (capability.isPresent() && node.getDirectionalIO().get(direction) != LevelNode.IOTypes.NONE) {
-                                    notified.addVisualConnection(direction);
-                                }
-                            }
-
-                            Optional<AbstractSubNetwork> otherSubnet = network.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pPos.relative(direction)));
-
-                            if (otherSubnet.isPresent() && subNetwork.getTier() == otherSubnet.get().getTier() && node.getDirectionalIO().get(direction) != LevelNode.IOTypes.NONE) {
-                                if (blockEntity instanceof DynamicTilingEntity dynamicTilingEntity) {
-                                    if (otherSubnet.get().getNodeByPosition(dynamicTilingEntity.getBlockPos()).getDirectionalIO().get(direction.getOpposite()) != LevelNode.IOTypes.NONE) {
-                                        dynamicTilingEntity.addVisualConnection(direction.getOpposite());
-                                        notified.addVisualConnection(direction);
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-
-                });
-
-
+                if (pLevel.getBlockEntity(pPos.relative(direction)) instanceof DynamicTilingEntity tilingEntity) tilingEntity.updateVisualConnections();
             }
         }
 
@@ -120,46 +86,16 @@ public class DispatchBlock extends Block implements EntityBlock {
             BlockEntity blockEntity = pLevel.getBlockEntity(pFromPos);
             BlockPos pos = pFromPos.subtract(pPos);
             Direction facing = Direction.fromDelta(pos.getX(), pos.getY(), pos.getZ());
-            pLevel.getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability1 -> {
-                findConnections(pPos, pFromPos, notifiedPipe, blockEntity, facing, capability1);
-            });
-        }
-
-    }
-
-    private void findConnections(BlockPos pPos, BlockPos pFromPos, DynamicTilingEntity notifiedPipe, BlockEntity blockEntity, Direction facing, ILevelNetwork capability1) {
-        notifiedPipe.removeVisualConnection(facing);
-        for (AbstractSubNetwork subNetwork : ((LevelNetworkHandler) capability1).getSubnetsFrom(LevelNode.of(pPos))) {
-            if (blockEntity != null) {
-                BlockPos pos1 = pPos.subtract(pFromPos);
-                LazyOptional<?> capability = blockEntity.getCapability(subNetwork.getCapability());
-
-                LevelNode node = subNetwork.getNodeByPosition(pPos);
-
-                if (capability.isPresent() && !(blockEntity instanceof DynamicTilingEntity) && node.getDirectionalIO().get(facing) != LevelNode.IOTypes.NONE) {
-                    notifiedPipe.addVisualConnection(facing);
-                    capability.addListener(l -> notifiedPipe.removeVisualConnection(facing));
-                }
-
-                Optional<AbstractSubNetwork> otherSubnet = capability1.getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(pFromPos));
-
-                if (otherSubnet.isPresent() && subNetwork.getTier() == otherSubnet.get().getTier() && node.getDirectionalIO().get(facing) != LevelNode.IOTypes.NONE) {
-                    if (blockEntity instanceof DynamicTilingEntity dynamicTilingEntity) {
-                        if (otherSubnet.get().getNodeByPosition(dynamicTilingEntity.getBlockPos()).getDirectionalIO().get(facing.getOpposite()) != LevelNode.IOTypes.NONE) {
-                            dynamicTilingEntity.addVisualConnection(facing.getOpposite());
-                            notifiedPipe.addVisualConnection(facing);
-                        }
-                    }
-
-                }
-
-            } else {
-                if (notifiedPipe.getConnectedSides().get(facing) == DynamicTilingEntity.Face.CONNECTION) {
-                    notifiedPipe.removeVisualConnection(facing);
+            if (pLevel.getBlockEntity(pPos) instanceof DynamicTilingEntity notified) {
+                notified.updateVisualConnections();
+                for (Direction direction : Direction.values()) {
+                    if (pLevel.getBlockEntity(pPos.relative(direction)) instanceof DynamicTilingEntity tilingEntity) tilingEntity.updateVisualConnections();
                 }
             }
         }
+
     }
+
 
     @Override
     public boolean onDestroyedByPlayer(BlockState state, Level level, BlockPos pos, Player player, boolean willHarvest, FluidState fluid) {
@@ -182,13 +118,7 @@ public class DispatchBlock extends Block implements EntityBlock {
                 level.updateNeighborsAt(pos, this);
 
                 if (level.getBlockEntity(pos) instanceof DynamicTilingEntity dynamicTilingEntity) {
-
-                    for (Direction direction : Direction.values()) {
-                        level.getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability1 -> {
-                            findConnections(pos, pos.relative(direction), dynamicTilingEntity, level.getBlockEntity(pos.relative(direction)), direction, capability1);
-                        });
-                    }
-
+                    dynamicTilingEntity.updateVisualConnections();
                 }
 
                 return false;
