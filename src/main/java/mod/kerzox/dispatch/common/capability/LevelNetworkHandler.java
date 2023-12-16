@@ -112,6 +112,8 @@ public class LevelNetworkHandler implements ILevelNetwork, ICapabilitySerializab
     }
 
 
+
+
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         return LevelNetworkHandler.NETWORK.orEmpty(cap, lazyOptional.cast());

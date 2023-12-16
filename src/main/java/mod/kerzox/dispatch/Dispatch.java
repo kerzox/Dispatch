@@ -37,17 +37,15 @@ public class Dispatch
 
         DONE
             - Tiers
+            - Gui
+            - IO on cables
 
         TODO
-            - I/O on each cable side
-                - needs gui
             - Upgrades
                 - More slots for item/fluids?
                 - Speed increase (extraction / insertion)
             - Filters
             - Wrench (for cables)
-
-
      */
 
 

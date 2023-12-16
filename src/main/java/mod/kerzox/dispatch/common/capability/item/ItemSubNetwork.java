@@ -150,8 +150,7 @@ public class ItemSubNetwork extends AbstractSubNetwork {
         for (LevelNode node : nodesWithInventories) {
             BlockPos position = node.getPos();
             for (Direction direction : Direction.values()) {
-                if (!(node.getDirectionalIO().get(direction) == LevelNode.IOTypes.ALL || node.getDirectionalIO().get(direction) == LevelNode.IOTypes.PUSH
-                || node.getDirectionalIO().get(direction) == LevelNode.IOTypes.DEFAULT)) continue;
+                if (node.getDirectionalIO().get(direction) == LevelNode.IOTypes.EXTRACT) continue;
                 BlockPos neighbourPos = position.relative(direction);
 
                 // check for block entities

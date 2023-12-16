@@ -12,6 +12,7 @@ import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
 import mod.kerzox.dispatch.common.network.LevelNetworkPacket;
 import mod.kerzox.dispatch.common.network.PacketHandler;
+import mod.kerzox.dispatch.common.util.DispatchUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -115,24 +116,24 @@ public class CableScreen extends Screen implements ICustomScreen {
 
             capabilityButtons.add(
                     new CapabilityTabButton(this, new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"),
-                            tabX + spacer, tabY, 15, 15, node, network, (button, i) -> displayTab((CapabilityTabButton)button, i, network))
+                            tabX + spacer, tabY, 15, 15, node, network, (button, i) -> displayTab((CapabilityTabButton) button, i, network))
             );
 
             spacer += 17;
 
-            ioButtons.put(network.getCapability(), new ArrayList<>(){
+            ioButtons.put(network.getCapability(), new ArrayList<>() {
                 {
-                    add(new Pair<>(Direction.UP, new IOHandlerButton(CableScreen.this, new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + 12, ioY, 12, 12,
+                    add(new Pair<>(Direction.UP, new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + 12, ioY, 12, 12,
                             Component.literal("Up"), Direction.UP, (button, i) -> handleButtonClick((IOHandlerButton) button, Direction.UP, i))));
-                    add(new Pair<>(dir[3],new IOHandlerButton(CableScreen.this, new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX, ioY + 12, 12, 12,
+                    add(new Pair<>(dir[3], new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX, ioY + 12, 12, 12,
                             Component.literal("Left Side"), dir[3], (button, i) -> handleButtonClick((IOHandlerButton) button, dir[3], i))));
-                    add(new Pair<>(dir[2],new IOHandlerButton(CableScreen.this, new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX, ioY + (12 * 2), 12, 12,
+                    add(new Pair<>(dir[2], new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX, ioY + (12 * 2), 12, 12,
                             Component.literal("Front"), dir[2], (button, i) -> handleButtonClick((IOHandlerButton) button, dir[2], i))));
-                    add(new Pair<>(dir[0],new IOHandlerButton(CableScreen.this, new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + 12, ioY + 12, 12, 12,
+                    add(new Pair<>(dir[0], new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + 12, ioY + 12, 12, 12,
                             Component.literal("Right Side"), dir[0], (button, i) -> handleButtonClick((IOHandlerButton) button, dir[0], i))));
-                    add(new Pair<>(Direction.DOWN,new IOHandlerButton(CableScreen.this, new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + 12, ioY + (12 * 2), 12, 12,
+                    add(new Pair<>(Direction.DOWN, new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + 12, ioY + (12 * 2), 12, 12,
                             Component.literal("Bottom"), Direction.DOWN, (button, i) -> handleButtonClick((IOHandlerButton) button, Direction.DOWN, i))));
-                    add(new Pair<>(dir[1],new IOHandlerButton(CableScreen.this, new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + (12 * 2), ioY + 12, 12, 12,
+                    add(new Pair<>(dir[1], new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + (12 * 2), ioY + 12, 12, 12,
                             Component.literal("Back"), dir[1], (button, i) -> handleButtonClick((IOHandlerButton) button, dir[1], i))));
                 }
             });
@@ -177,12 +178,23 @@ public class CableScreen extends Screen implements ICustomScreen {
     }
 
     private void handleButtonClick(IOHandlerButton button, Direction direction, int buttonClick) {
-        if (buttonClick == 0) {
-            int index = (button.getCurrentSetting().ordinal() + 1) % LevelNode.IOTypes.values().length;
-            button.setCurrentSetting(LevelNode.IOTypes.values()[index]);
+
+        if (LevelNetworkHandler.getHandler(level).getSubnetFromPos(currentSubNetworkActive.getCapability(), LevelNode.of(node.getPos().relative(direction))).isPresent()) {
+
+            if (button.getCurrentSetting() != LevelNode.IOTypes.NONE) {
+                button.setCurrentSetting(LevelNode.IOTypes.NONE);
+            } else {
+                button.setCurrentSetting(LevelNode.IOTypes.DEFAULT);
+            }
+
         } else {
-            int index = (button.getCurrentSetting().ordinal() - 1 + LevelNode.IOTypes.values().length) % LevelNode.IOTypes.values().length;
-            button.setCurrentSetting(LevelNode.IOTypes.values()[index]);
+            if (buttonClick == 0) {
+                int index = (button.getCurrentSetting().ordinal() + 1) % LevelNode.IOTypes.values().length;
+                button.setCurrentSetting(LevelNode.IOTypes.values()[index]);
+            } else {
+                int index = (button.getCurrentSetting().ordinal() - 1 + LevelNode.IOTypes.values().length) % LevelNode.IOTypes.values().length;
+                button.setCurrentSetting(LevelNode.IOTypes.values()[index]);
+            }
         }
 
         LevelNetworkHandler.getHandler(level).getSubnetFromPos(currentSubNetworkActive.getCapability(), node).ifPresent(subNetwork -> {

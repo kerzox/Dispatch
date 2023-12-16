@@ -1,5 +1,6 @@
 package mod.kerzox.dispatch.common.capability.fluid;
 
+import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
@@ -12,6 +13,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -37,14 +39,20 @@ public class FluidSubNetwork extends AbstractSubNetwork {
     public void tick() {
 
         FluidStack stack = tank.getFluid();
+
+        if (tank.getFluid().getAmount() < tank.getCapacity())
+            tryExtraction();
+
         if (tank.isEmpty()) return;
 
         List<IFluidHandler> consumers = getAvailableConsumers();
         if (consumers.size() == 0) return;
 
         for (IFluidHandler consumer : consumers) {
-            int returned = consumer.fill(stack, IFluidHandler.FluidAction.EXECUTE);
-            stack.shrink(returned);
+            if (!stack.isEmpty()) {
+                int returned = consumer.fill(stack, IFluidHandler.FluidAction.EXECUTE);
+                stack.shrink(returned);
+            }
         }
 
 
@@ -55,6 +63,38 @@ public class FluidSubNetwork extends AbstractSubNetwork {
     public void update() {
         super.update();
         findInventories();
+    }
+
+
+    /**
+     * Method loops through all the cables that are on extraction mode and checks if the direction is set to a extract
+     * If so then it will attempt to extract energy from this direction.
+     */
+
+    public void tryExtraction() {
+        for (LevelNode node : this.nodesWithExtraction) {
+            for (Direction direction : Direction.values()) {
+                if (node.getDirectionalIO().get(direction) == LevelNode.IOTypes.EXTRACT || node.getDirectionalIO().get(direction) == LevelNode.IOTypes.ALL) {
+                    BlockPos pos = node.getPos().relative(direction);
+                    BlockEntity blockEntity = getLevel().getBlockEntity(pos);
+                    if (blockEntity != null) {
+                        LazyOptional<IFluidHandler> energyCapability = blockEntity.getCapability(ForgeCapabilities.FLUID_HANDLER, direction.getOpposite());
+                        energyCapability.ifPresent(cap -> {
+
+                            for (int i = 0; i < cap.getTanks(); i++) {
+                                FluidStack fluidstack = cap.drain(Math.min(250, cap.getTankCapacity(i)), IFluidHandler.FluidAction.SIMULATE);
+                                if (!fluidstack.isEmpty()) {
+                                    int returned = tank.fill(fluidstack, IFluidHandler.FluidAction.EXECUTE);
+                                    cap.drain(returned, IFluidHandler.FluidAction.EXECUTE);
+                                }
+                            }
+
+
+                        });
+                    }
+                }
+            }
+        }
     }
 
 
@@ -100,6 +140,9 @@ public class FluidSubNetwork extends AbstractSubNetwork {
         for (LevelNode node : nodesWithInventories) {
             BlockPos position = node.getPos();
             for (Direction direction : Direction.values()) {
+
+                if (node.getDirectionalIO().get(direction) == LevelNode.IOTypes.EXTRACT) continue;
+
                 BlockPos neighbourPos = position.relative(direction);
 
                 // check for block entities
