@@ -184,14 +184,14 @@ public class ItemSubNetwork extends AbstractSubNetwork {
     }
 
     @Override
-    protected CompoundTag write() {
+    public CompoundTag write() {
         CompoundTag tag = new CompoundTag();
         tag.put("item", this.itemStackHandler.serializeNBT());
         return tag;
     }
 
     @Override
-    protected void read(CompoundTag tag) {
+    public void read(CompoundTag tag) {
         this.itemStackHandler.deserializeNBT(tag.getCompound("item"));
     }
 

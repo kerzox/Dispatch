@@ -184,14 +184,14 @@ public class FluidSubNetwork extends AbstractSubNetwork {
     }
 
     @Override
-    protected CompoundTag write() {
+    public CompoundTag write() {
         CompoundTag tag = new CompoundTag();
         tank.writeToNBT(tag);
         return tag;
     }
 
     @Override
-    protected void read(CompoundTag tag) {
+    public void read(CompoundTag tag) {
         tank.readFromNBT(tag);
     }
 

@@ -97,8 +97,8 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
         return nodes.hasPosition(node);
     }
 
-    protected abstract CompoundTag write();
-    protected abstract void read(CompoundTag tag);
+    public abstract CompoundTag write();
+    public abstract void read(CompoundTag tag);
 
     @Override
     public CompoundTag serializeNBT() {

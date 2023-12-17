@@ -2,10 +2,12 @@ package mod.kerzox.dispatch.client.gui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.datafixers.util.Pair;
+import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.client.component.CapabilityTabButton;
 import mod.kerzox.dispatch.client.component.IOHandlerButton;
 import mod.kerzox.dispatch.client.component.ToggleButtonComponent;
+import mod.kerzox.dispatch.client.render.RenderingUtil;
 import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
@@ -230,6 +232,52 @@ public class CableScreen extends Screen implements ICustomScreen {
             graphics.blit(GUI, i, j, 0, 0, 77, 79, 256, 256);
         }
         super.render(graphics, pMouseX, pMouseY, partialTick);
+
+        if (Config.DEBUG_MODE) {
+
+            LevelNetworkHandler.getHandler(level).getSubnetFromPos(currentSubNetworkActive.getCapability(), LevelNode.of(node.getPos())).ifPresent(subNetwork -> {
+                int y = 25;
+                RenderingUtil.drawText(
+                        "Current Network Subnets: " + LevelNetworkHandler.getHandler(level).getNetworkByCapability(subNetwork.getCapability()).getSubNetworks().size(),
+                        graphics,
+                        getGuiLeft() - 150,
+                        y,
+                        0xff6565
+                );
+
+                RenderingUtil.drawText(
+                        "Current Subnet Capability: " + subNetwork.getCapability().getName(),
+                        graphics,
+                        getGuiLeft() - 150,
+                        y += 10,
+                        0xff6565
+                );
+
+                RenderingUtil.drawText(
+                        "Cable Length: " + subNetwork.getNodes().size(),
+                        graphics,
+                        getGuiLeft() - 150,
+                        y += 10,
+                        0xff6565
+                );
+
+                RenderingUtil.drawText(
+                        "Subnet Tier: " + subNetwork.getTier().getSerializedName().substring(0, 1).toUpperCase() + subNetwork.getTier().getSerializedName().substring(1),
+                        graphics,
+                        getGuiLeft() - 150,
+                        y += 10,
+                        0xff6565
+                );
+
+                RenderingUtil.drawText(
+                        "Subnet Data: " + subNetwork.write(),
+                        graphics,
+                        getGuiLeft() - 150,
+                        y += 10,
+                        0xff6565
+                );
+            });
+        }
     }
 
     @Override

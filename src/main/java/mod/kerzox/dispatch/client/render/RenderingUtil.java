@@ -11,6 +11,9 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.Graph;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -266,6 +269,18 @@ public class RenderingUtil {
         addVertex(baker, vertices[2], u2, v1, tint, direction);
         addVertex(baker, vertices[3], u1, v1, tint, direction);
         return quad[0];
+    }
+
+    public static int defaultGrey = 4210752;
+
+    public static void drawText(String string, GuiGraphics graphics, int x, int y, int colour) {
+        FormattedCharSequence title = Component.literal(string).getVisualOrderText();
+        graphics.drawString(Minecraft.getInstance().font, title, x, y, colour, false);
+    }
+
+    public static void drawCenteredText(String string, GuiGraphics graphics, int x, int y, int colour) {
+        FormattedCharSequence title = Component.literal(string).getVisualOrderText();
+        graphics.drawString(Minecraft.getInstance().font, title, x - Minecraft.getInstance().font.width(title) / 2, y, colour, false);
     }
 
     public static List<BakedQuad> getQuads(BakedModel model, BlockEntity tile, Direction side, RenderType type) {

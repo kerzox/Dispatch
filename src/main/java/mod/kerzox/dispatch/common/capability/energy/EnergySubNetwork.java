@@ -170,14 +170,14 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     }
 
     @Override
-    protected CompoundTag write() {
+    public CompoundTag write() {
         CompoundTag tag = new CompoundTag();
         tag.put("energy", this.storage.serializeNBT());
         return tag;
     }
 
     @Override
-    protected void read(CompoundTag tag) {
+    public void read(CompoundTag tag) {
         this.storage.read(tag);
     }
 

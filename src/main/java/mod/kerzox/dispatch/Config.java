@@ -15,6 +15,8 @@ import java.util.Set;
 public class Config {
     public static final ForgeConfigSpec GENERAL_SPEC;
 
+    public static boolean DEBUG_MODE;
+
     public static long BASIC_TIER_TRANSFER_SPEED;
     public static long ADV_TIER_TRANSFER_SPEED;
     public static long SUP_TIER_TRANSFER_SPEED;
@@ -32,6 +34,8 @@ public class Config {
         setupConfig(configBuilder);
         GENERAL_SPEC = configBuilder.build();
     }
+
+    public static ForgeConfigSpec.BooleanValue DEBUG_MODE_SPEC;
 
     private static ForgeConfigSpec.LongValue BASIC_TIER_TRANSFER;
     private static ForgeConfigSpec.LongValue ADV_TIER_TRANSFER;
@@ -94,6 +98,12 @@ public class Config {
                 .defineInRange("capacity/cable", 10000 * 4, 0, Long.MAX_VALUE);
         builder.pop();
 
+        builder.push("Hidden Features");
+        DEBUG_MODE_SPEC = builder
+                .comment("Turn on debug mode (Gives debug information on dispatch blocks)")
+                .define("debug mode", false);
+        builder.pop();
+
         builder.pop();
     }
 
@@ -109,6 +119,7 @@ public class Config {
         ELITE_TIER_CAPACITY = ELITE_TIER_CA.get();
         ULTIMATE_TIER_TRANSFER_SPEED = ULTIMATE_TIER_TRANSFER.get();
         ULTIMATE_TIER_CAPACITY = ULTIMATE_TIER_CAP.get();
+        DEBUG_MODE = DEBUG_MODE_SPEC.get();
     }
 
     public static long getEnergyCapacity(DispatchItem.Tiers tier) {

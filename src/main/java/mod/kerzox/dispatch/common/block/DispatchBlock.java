@@ -26,6 +26,9 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,6 +40,45 @@ public class DispatchBlock extends Block implements EntityBlock {
 
     public DispatchBlock(Properties p_49795_) {
         super(p_49795_);
+    }
+    private VoxelShape CORE = Block.box(5, 5, 5, 11, 11, 11);
+    private VoxelShape[] allValidSides = new VoxelShape[]{
+            Shapes.or(Block.box(5, 0, 5, 11, 11, 11)), // down 0
+            Shapes.or(Block.box(5, 5, 5, 11, 11+5, 11)), // up 1
+            Shapes.or(Block.box(5, 5, 0, 11, 11, 5)), // north 2
+            Shapes.or(Block.box(5, 5, 5, 11, 11, 11+5)), // south 3
+            Shapes.or(Block.box(0, 5, 5, 11, 11, 11)), // west 4
+            Shapes.or(Block.box(5, 5, 5, 11+5, 11, 11)), // east 5
+    };
+
+    @Override
+    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        if (pLevel.getBlockEntity(pPos) instanceof DynamicTilingEntity pipe) {
+            VoxelShape combinedShape = CORE;
+            for (Direction direction : pipe.getConnectionsAsDirections()) {
+                if (direction == Direction.UP) {
+                    combinedShape = Shapes.or(combinedShape, allValidSides[1]);
+                }
+                if (direction == Direction.DOWN) {
+                    combinedShape = Shapes.or(combinedShape, allValidSides[0]);
+                }
+                if (direction == Direction.WEST) {
+                    combinedShape = Shapes.or(combinedShape, allValidSides[4]);
+                }
+                if (direction == Direction.EAST) {
+                    combinedShape = Shapes.or(combinedShape, allValidSides[5]);
+                }
+                if (direction == Direction.NORTH) {
+                    combinedShape = Shapes.or(combinedShape, allValidSides[2]);
+                }
+                if (direction == Direction.SOUTH) {
+                    combinedShape = Shapes.or(combinedShape, allValidSides[3]);
+                }
+            }
+
+            return combinedShape;
+        }
+        return CORE;
     }
 
     @Override
