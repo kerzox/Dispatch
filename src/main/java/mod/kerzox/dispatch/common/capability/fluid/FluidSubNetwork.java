@@ -200,7 +200,14 @@ public class FluidSubNetwork extends AbstractSubNetwork {
 
     @Override
     public <T> LazyOptional<T> getHandler(BlockPos worldPosition, Direction side) {
-        return handler.cast();
+
+        // for invalidation
+        if (worldPosition == null) return handler.cast();
+        if (getNodeByPosition(worldPosition) == null) return LazyOptional.empty();
+
+
+        if (getNodeByPosition(worldPosition).getDirectionalIO().get(side) != LevelNode.IOTypes.NONE) return handler.cast();
+        else return LazyOptional.empty();
     }
 
     @Override

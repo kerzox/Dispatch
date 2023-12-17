@@ -201,7 +201,13 @@ public class ItemSubNetwork extends AbstractSubNetwork {
 
     @Override
     public <T> LazyOptional<T> getHandler(BlockPos worldPosition, Direction side) {
-        return handlerLazyOptional.cast();
+        // for invalidation
+        if (worldPosition == null) return handlerLazyOptional.cast();
+        if (getNodeByPosition(worldPosition) == null) return LazyOptional.empty();
+
+
+        if (getNodeByPosition(worldPosition).getDirectionalIO().get(side) != LevelNode.IOTypes.NONE) return handlerLazyOptional.cast();
+        else return LazyOptional.empty();
     }
 
     @Override

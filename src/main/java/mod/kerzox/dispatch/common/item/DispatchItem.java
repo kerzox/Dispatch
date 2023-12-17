@@ -28,6 +28,7 @@ public class DispatchItem extends BlockItem {
         public String getSerializedName() {
             return toString().toLowerCase();
         }
+
     }
 
     private Capability<?> capability;

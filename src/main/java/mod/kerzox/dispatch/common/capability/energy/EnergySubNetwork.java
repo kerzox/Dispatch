@@ -191,6 +191,8 @@ public class EnergySubNetwork extends AbstractSubNetwork {
 
         // for invalidation
         if (worldPosition == null) return handler.cast();
+        if (getNodeByPosition(worldPosition) == null) return LazyOptional.empty();
+
 
         if (getNodeByPosition(worldPosition).getDirectionalIO().get(side) != LevelNode.IOTypes.NONE) return handler.cast();
         else return LazyOptional.empty();

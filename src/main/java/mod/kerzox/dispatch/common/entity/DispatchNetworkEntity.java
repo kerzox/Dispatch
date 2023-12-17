@@ -43,27 +43,6 @@ public class DispatchNetworkEntity extends SyncBlockEntity {
 
     @Override
     public boolean onPlayerClick(Level pLevel, Player pPlayer, BlockPos pPos, InteractionHand pHand, BlockHitResult pHit) {
-        if (!pLevel.isClientSide && pHand == InteractionHand.MAIN_HAND) {
-//            pLevel.getCapability(LevelNetworkHandler.NETWORK).ifPresent(cap -> {
-//                if (cap instanceof LevelNetworkHandler networkHandler) {
-//
-//                    int total = 0;
-//                    for (AbstractNetwork<?> network : networkHandler.getNetworkMap().values()) {
-//                        total += network.getSubNetworks().size();
-//                    }
-//
-//                    pPlayer.sendSystemMessage(Component.literal("Total Subnet Count: " + total));
-//                    pPlayer.sendSystemMessage(Component.literal("Subnets at this position: " + networkHandler.getSubnetsFrom(LevelNode.of(pPos)).size()));
-//                    for (AbstractSubNetwork subNetwork : networkHandler.getSubnetsFrom(LevelNode.of(pPos))) {
-//                        pPlayer.sendSystemMessage(Component.literal("Network: " + subNetwork));
-//                        pPlayer.sendSystemMessage(Component.literal("Network size: " + subNetwork.getNodes().size()));
-//                        //pPlayer.sendSystemMessage(Component.literal("Tag: " + subNetwork.serializeNBT()));
-//                        pPlayer.sendSystemMessage(Component.literal("Node Data: " + subNetwork.getNodeByPosition(worldPosition).serialize()));
-//                        System.out.println(subNetwork.serializeNBT());
-//                    }
-//                }
-//            });
-        }
         return super.onPlayerClick(pLevel, pPlayer, pPos, pHand, pHit);
     }
 
@@ -81,7 +60,6 @@ public class DispatchNetworkEntity extends SyncBlockEntity {
     }
 
     public void updateVisualConnections() {
-
         for (Direction direction : Direction.values()) {
             removeVisualConnection(direction);
         }
@@ -103,11 +81,6 @@ public class DispatchNetworkEntity extends SyncBlockEntity {
 
                     if (otherSub.getNodeByPosition(neighbour).getDirectionalIO().get(direction.getOpposite()) != LevelNode.IOTypes.NONE) {
                         addVisualConnection(direction);
-//
-//                        if (be instanceof DynamicTilingEntity dynamicTilingEntity) {
-//                            dynamicTilingEntity.addVisualConnection(direction.getOpposite());
-//                        }
-
                     }
 
                 });
