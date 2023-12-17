@@ -6,7 +6,7 @@ import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.network.LevelNetworkPacket;
 import mod.kerzox.dispatch.common.network.PacketHandler;
 import net.minecraft.client.Minecraft;
@@ -32,7 +32,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTilingEntity> {
+public class MultiroleCableRenderer implements BlockEntityRenderer<DispatchNetworkEntity> {
 
     public static final ResourceLocation CONNECTED = new ResourceLocation(Dispatch.MODID, "block/generic_connected");
     public static final ResourceLocation CONNECTED_BIG = new ResourceLocation(Dispatch.MODID, "block/bigger_cable_connected");
@@ -46,7 +46,7 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
     }
 
     @Override
-    public void render(DynamicTilingEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
+    public void render(DispatchNetworkEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
         WrappedPose pose = WrappedPose.of(pPoseStack);
 
         AtomicReference<float[]> colours = new AtomicReference<>();
@@ -76,7 +76,7 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
                     colours.set(RenderingUtil.convertColor(list.get(0).getRenderingColour()));
                     renderCore(list.get(0).getCapability(), pBlockEntity, pPackedOverlay, pose, colours, pPackedLight, pPackedOverlay, builder);
                     pBlockEntity.getConnectedSides().forEach((connectedDirection, face) -> {
-                        renderPipeConnection(pBlockEntity, pPoseStack, pPackedOverlay, pose, colours, model, pPackedLight, pPackedOverlay, builder, connectedDirection, face == DynamicTilingEntity.Face.CONNECTION);
+                        renderPipeConnection(pBlockEntity, pPoseStack, pPackedOverlay, pose, colours, model, pPackedLight, pPackedOverlay, builder, connectedDirection, face == DispatchNetworkEntity.Face.CONNECTION);
                     });
                     pose.pop();
                 } else {
@@ -84,7 +84,7 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
                     pose.push();
                     renderCore(pBlockEntity, pPackedOverlay, pose, colours, pPackedLight, pPackedOverlay, builder, model2);
                     pBlockEntity.getConnectedSides().forEach((connectedDirection, face) -> {
-                        renderPipeConnection(pBlockEntity, pPoseStack, pPackedOverlay, pose, colours, model1, pPackedLight, pPackedOverlay, builder, connectedDirection, face == DynamicTilingEntity.Face.CONNECTION);
+                        renderPipeConnection(pBlockEntity, pPoseStack, pPackedOverlay, pose, colours, model1, pPackedLight, pPackedOverlay, builder, connectedDirection, face == DispatchNetworkEntity.Face.CONNECTION);
                     });
                     pose.pop();
                 }
@@ -114,7 +114,7 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
 
     }
 
-    private void renderCore(DynamicTilingEntity pBlockEntity, int pPackedOverlay, WrappedPose pose, AtomicReference<float[]> colours, int blockLight, int skyLight, VertexConsumer builder, BakedModel model2) {
+    private void renderCore(DispatchNetworkEntity pBlockEntity, int pPackedOverlay, WrappedPose pose, AtomicReference<float[]> colours, int blockLight, int skyLight, VertexConsumer builder, BakedModel model2) {
         for (Direction direction : Direction.values()) {
             List<BakedQuad> quads = getQuads(model2, pBlockEntity, direction, RenderType.cutout());
             RenderingUtil.renderQuads(pose.last(), builder, colours.get()[0], colours.get()[1], colours.get()[2], 1f,
@@ -122,7 +122,7 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
         }
     }
 
-    private void renderCore(Capability<?> capability, DynamicTilingEntity pBlockEntity, int pPackedOverlay, WrappedPose pose, AtomicReference<float[]> colours, int blockLight, int skyLight, VertexConsumer builder) {
+    private void renderCore(Capability<?> capability, DispatchNetworkEntity pBlockEntity, int pPackedOverlay, WrappedPose pose, AtomicReference<float[]> colours, int blockLight, int skyLight, VertexConsumer builder) {
         for (Direction direction : Direction.values()) {
             List<BakedQuad> quads = getQuads(capability == ForgeCapabilities.ENERGY ? Minecraft.getInstance().getModelManager().getModel(CORE_ENERGY) : Minecraft.getInstance().getModelManager().getModel(CORE), pBlockEntity, direction, RenderType.cutout());
             RenderingUtil.renderQuads(pose.last(), builder, colours.get()[0], colours.get()[1], colours.get()[2], 1f,
@@ -131,7 +131,7 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DynamicTiling
     }
 
 
-    private void renderPipeConnection(DynamicTilingEntity pBlockEntity, PoseStack pPoseStack, int pPackedOverlay, WrappedPose pose, AtomicReference<float[]> colours, BakedModel model, int blockLight, int skyLight, VertexConsumer builder, Direction connectedDirection, Boolean connected) {
+    private void renderPipeConnection(DispatchNetworkEntity pBlockEntity, PoseStack pPoseStack, int pPackedOverlay, WrappedPose pose, AtomicReference<float[]> colours, BakedModel model, int blockLight, int skyLight, VertexConsumer builder, Direction connectedDirection, Boolean connected) {
         if (connected) {
             pose.push();
 

@@ -3,10 +3,9 @@ package mod.kerzox.dispatch.common.event;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -132,7 +131,7 @@ public class CommonEvents {
             level.getCapability(LevelNetworkHandler.NETWORK).ifPresent(cap -> {
                 if (cap instanceof LevelNetworkHandler levelNetwork) {
 
-                    if (event.getLevel().getBlockEntity(event.getPos()) instanceof DynamicTilingEntity) return;
+                    if (event.getLevel().getBlockEntity(event.getPos()) instanceof DispatchNetworkEntity) return;
 
 
                     if (levelNetwork.getSubnetsFrom(LevelNode.of(pos)).isEmpty()) return;

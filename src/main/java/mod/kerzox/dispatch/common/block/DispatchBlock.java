@@ -1,17 +1,15 @@
 package mod.kerzox.dispatch.common.block;
 
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
-import mod.kerzox.dispatch.common.capability.ILevelNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.entity.SyncBlockEntity;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
@@ -29,12 +27,10 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class DispatchBlock extends Block implements EntityBlock {
 
@@ -53,7 +49,7 @@ public class DispatchBlock extends Block implements EntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        if (pLevel.getBlockEntity(pPos) instanceof DynamicTilingEntity pipe) {
+        if (pLevel.getBlockEntity(pPos) instanceof DispatchNetworkEntity pipe) {
             VoxelShape combinedShape = CORE;
             for (Direction direction : pipe.getConnectionsAsDirections()) {
                 if (direction == Direction.UP) {
@@ -112,10 +108,10 @@ public class DispatchBlock extends Block implements EntityBlock {
 
     @Override
     public void onPlace(BlockState state, Level pLevel, BlockPos pPos, BlockState pState, boolean moving) {
-        if (pLevel.getBlockEntity(pPos) instanceof DynamicTilingEntity notified) {
+        if (pLevel.getBlockEntity(pPos) instanceof DispatchNetworkEntity notified) {
             notified.updateVisualConnections();
             for (Direction direction : Direction.values()) {
-                if (pLevel.getBlockEntity(pPos.relative(direction)) instanceof DynamicTilingEntity tilingEntity) tilingEntity.updateVisualConnections();
+                if (pLevel.getBlockEntity(pPos.relative(direction)) instanceof DispatchNetworkEntity tilingEntity) tilingEntity.updateVisualConnections();
             }
         }
 
@@ -124,14 +120,14 @@ public class DispatchBlock extends Block implements EntityBlock {
     @Override
     public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
         super.neighborChanged(pState, pLevel, pPos, pBlock, pFromPos, pIsMoving);
-        if (pLevel.getBlockEntity(pPos) instanceof DynamicTilingEntity notifiedPipe) {
+        if (pLevel.getBlockEntity(pPos) instanceof DispatchNetworkEntity notifiedPipe) {
             BlockEntity blockEntity = pLevel.getBlockEntity(pFromPos);
             BlockPos pos = pFromPos.subtract(pPos);
             Direction facing = Direction.fromDelta(pos.getX(), pos.getY(), pos.getZ());
-            if (pLevel.getBlockEntity(pPos) instanceof DynamicTilingEntity notified) {
+            if (pLevel.getBlockEntity(pPos) instanceof DispatchNetworkEntity notified) {
                 notified.updateVisualConnections();
                 for (Direction direction : Direction.values()) {
-                    if (pLevel.getBlockEntity(pPos.relative(direction)) instanceof DynamicTilingEntity tilingEntity) tilingEntity.updateVisualConnections();
+                    if (pLevel.getBlockEntity(pPos.relative(direction)) instanceof DispatchNetworkEntity tilingEntity) tilingEntity.updateVisualConnections();
                 }
             }
         }
@@ -159,7 +155,7 @@ public class DispatchBlock extends Block implements EntityBlock {
                 Block.popResource(level, pos, drop);
                 level.updateNeighborsAt(pos, this);
 
-                if (level.getBlockEntity(pos) instanceof DynamicTilingEntity dynamicTilingEntity) {
+                if (level.getBlockEntity(pos) instanceof DispatchNetworkEntity dynamicTilingEntity) {
                     dynamicTilingEntity.updateVisualConnections();
                 }
 
@@ -174,7 +170,7 @@ public class DispatchBlock extends Block implements EntityBlock {
     public List<ItemStack> getDrops(BlockState p_287732_, LootParams.Builder p_287596_) {
         BlockEntity blockentity = p_287596_.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
 
-        if (blockentity instanceof DynamicTilingEntity dynamicTilingEntity) {
+        if (blockentity instanceof DispatchNetworkEntity dynamicTilingEntity) {
             return List.of(dynamicTilingEntity.getDrop());
         }
 
@@ -184,9 +180,9 @@ public class DispatchBlock extends Block implements EntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState oState, boolean p_60519_) {
-        if (level.getBlockEntity(pos) instanceof DynamicTilingEntity pipe) {
+        if (level.getBlockEntity(pos) instanceof DispatchNetworkEntity pipe) {
             for (Direction direction : pipe.getConnectionsAsDirections()) {
-                if (level.getBlockEntity(pos.relative(direction)) instanceof DynamicTilingEntity connectedTo) {
+                if (level.getBlockEntity(pos.relative(direction)) instanceof DispatchNetworkEntity connectedTo) {
                     connectedTo.removeVisualConnection(direction.getOpposite());
                 }
             }
@@ -203,6 +199,6 @@ public class DispatchBlock extends Block implements EntityBlock {
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos p_153215_, BlockState p_153216_) {
-        return new DynamicTilingEntity(p_153215_, p_153216_);
+        return new DispatchNetworkEntity(p_153215_, p_153216_);
     }
 }

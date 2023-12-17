@@ -7,7 +7,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -22,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class DynamicTilingEntity extends SyncBlockEntity {
+public class DispatchNetworkEntity extends SyncBlockEntity {
 
 
     public enum Face {
@@ -38,7 +37,7 @@ public class DynamicTilingEntity extends SyncBlockEntity {
             Direction.UP, Face.NONE,
             Direction.DOWN, Face.NONE));
 
-    public DynamicTilingEntity(BlockPos pos, BlockState state) {
+    public DispatchNetworkEntity(BlockPos pos, BlockState state) {
         super(DispatchRegistry.BlockEntities.DISPATCH_ENTITY.get(), pos, state);
     }
 
@@ -95,7 +94,7 @@ public class DynamicTilingEntity extends SyncBlockEntity {
                 BlockPos neighbour = worldPosition.relative(direction);
                 BlockEntity be = level.getBlockEntity(neighbour);
 
-                if (be != null && !(be instanceof DynamicTilingEntity)) {
+                if (be != null && !(be instanceof DispatchNetworkEntity)) {
                     // show a visual connection
                     if (be.getCapability(subNetwork.getCapability()).isPresent()) addVisualConnection(direction);
                 }

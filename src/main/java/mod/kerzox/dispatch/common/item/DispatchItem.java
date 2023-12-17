@@ -2,7 +2,7 @@ package mod.kerzox.dispatch.common.item;
 
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -69,7 +69,7 @@ public class DispatchItem extends BlockItem {
                         handler.createOrAttachToCapabilityNetwork(this.capability, this.tier, ctx.getClickedPos(), true);
                         for (Direction direction : Direction.values()) {
                             BlockPos pos = ctx.getClickedPos().relative(direction);
-                            if (ctx.getLevel().getBlockEntity(pos) instanceof DynamicTilingEntity entity) {
+                            if (ctx.getLevel().getBlockEntity(pos) instanceof DispatchNetworkEntity entity) {
                                 entity.updateVisualConnections();
                                 ctx.getLevel().updateNeighborsAt(entity.getBlockPos(), entity.getBlockState().getBlock());
                             }

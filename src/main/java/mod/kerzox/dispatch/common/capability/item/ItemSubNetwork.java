@@ -4,7 +4,7 @@ import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -95,7 +95,7 @@ public class ItemSubNetwork extends AbstractSubNetwork {
                 BlockPos neighbourPos = node.getPos().relative(direction);
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
 
-                if (be != null && !(be instanceof DynamicTilingEntity)) {
+                if (be != null && !(be instanceof DispatchNetworkEntity)) {
                     be.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).ifPresent(handler -> {
                         nodesWithInventories.add(node);
                     });
@@ -155,7 +155,7 @@ public class ItemSubNetwork extends AbstractSubNetwork {
 
                 // check for block entities
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
-                if (be != null && !(be instanceof DynamicTilingEntity)) {
+                if (be != null && !(be instanceof DispatchNetworkEntity)) {
                     be.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).ifPresent(handler -> {
                         for (int i = 0; i < handler.getSlots(); i++) {
 

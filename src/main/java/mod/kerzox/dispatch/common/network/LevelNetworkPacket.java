@@ -1,23 +1,19 @@
 package mod.kerzox.dispatch.common.network;
 
-import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.network.client.LevelNetworkPacketClient;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 public class LevelNetworkPacket {
@@ -76,7 +72,7 @@ public class LevelNetworkPacket {
                                             subNetwork.getNodeByPosition(node.getPos()).read(data.getCompound("node"));
                                             subNetwork.update();
                                             network.getNetworkByCapability(subNetwork.getCapability()).updateNetwork(oldNode, node);
-                                            if (level.getBlockEntity(oldNode.getPos()) instanceof DynamicTilingEntity tilingEntity) {
+                                            if (level.getBlockEntity(oldNode.getPos()) instanceof DispatchNetworkEntity tilingEntity) {
                                                 tilingEntity.updateVisualConnections();
                                                 level.updateNeighborsAt(tilingEntity.getBlockPos(), tilingEntity.getBlockState().getBlock());
                                             }

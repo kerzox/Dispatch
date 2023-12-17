@@ -2,7 +2,7 @@ package mod.kerzox.dispatch.common.capability.energy;
 
 import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.common.capability.*;
-import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -106,7 +106,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
                 BlockPos neighbourPos = node.getPos().relative(direction);
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
 
-                if (be != null && !(be instanceof DynamicTilingEntity)) {
+                if (be != null && !(be instanceof DispatchNetworkEntity)) {
                     be.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite()).ifPresent(handler -> {
                         nodesWithInventories.add(node);
                     });
@@ -139,7 +139,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
 
                 // check for block entities
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
-                if (be != null && !(be instanceof DynamicTilingEntity)) {
+                if (be != null && !(be instanceof DispatchNetworkEntity)) {
                     be.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite()).ifPresent(handler -> {
                         if (handler.canReceive() && handler.getEnergyStored() < handler.getMaxEnergyStored())
                             consumers.add(handler);

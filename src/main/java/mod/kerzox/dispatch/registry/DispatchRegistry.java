@@ -1,7 +1,7 @@
 package mod.kerzox.dispatch.registry;
 
 import mod.kerzox.dispatch.common.block.DispatchBlock;
-import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.Registries;
@@ -154,9 +154,9 @@ public class DispatchRegistry {
 
     public static final class BlockEntities {
 
-        public static final RegistryObject<BlockEntityType<DynamicTilingEntity>> DISPATCH_ENTITY
+        public static final RegistryObject<BlockEntityType<DispatchNetworkEntity>> DISPATCH_ENTITY
                 = BLOCK_ENTITIES.register("dispatch_entity",
-                () -> BlockEntityType.Builder.of(DynamicTilingEntity::new, Blocks.DISPATCH_BLOCK.get()).build(null));
+                () -> BlockEntityType.Builder.of(DispatchNetworkEntity::new, Blocks.DISPATCH_BLOCK.get()).build(null));
 
 
         public static void init() {

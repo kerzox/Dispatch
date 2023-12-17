@@ -1,11 +1,10 @@
 package mod.kerzox.dispatch.common.capability.fluid;
 
-import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
-import mod.kerzox.dispatch.common.entity.DynamicTilingEntity;
+import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,7 +12,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
@@ -113,7 +111,7 @@ public class FluidSubNetwork extends AbstractSubNetwork {
                 BlockPos neighbourPos = node.getPos().relative(direction);
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
 
-                if (be != null && !(be instanceof DynamicTilingEntity)) {
+                if (be != null && !(be instanceof DispatchNetworkEntity)) {
                     be.getCapability(ForgeCapabilities.FLUID_HANDLER, direction.getOpposite()).ifPresent(handler -> {
                         nodesWithInventories.add(node);
                     });
@@ -147,7 +145,7 @@ public class FluidSubNetwork extends AbstractSubNetwork {
 
                 // check for block entities
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
-                if (be != null && !(be instanceof DynamicTilingEntity)) {
+                if (be != null && !(be instanceof DispatchNetworkEntity)) {
                     be.getCapability(ForgeCapabilities.FLUID_HANDLER, direction.getOpposite()).ifPresent(handler -> {
                         for (int i = 0; i < handler.getTanks(); i++) {
 
