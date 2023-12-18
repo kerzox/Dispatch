@@ -24,6 +24,8 @@ public class ClientSetup {
         event.register(MultiroleCableRenderer.CORE_BIG);
         event.register(MultiroleCableRenderer.CORE);
         event.register(MultiroleCableRenderer.CORE_ENERGY);
+        event.register(MultiroleCableRenderer.ENERGY_CONNECTED);
+        event.register(MultiroleCableRenderer.ENERGY_BEAM);
         event.register(MultiroleCableRenderer.CORE_FLUID);
         event.register(MultiroleCableRenderer.CORE_ITEM);
         event.register(MultiroleCableRenderer.BORDER);

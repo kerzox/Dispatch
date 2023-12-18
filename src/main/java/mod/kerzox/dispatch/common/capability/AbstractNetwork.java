@@ -349,6 +349,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
 
     public void createNetwork(DispatchItem.Tiers tier, BlockPos pos) {
         T network = createSubnetAtPosition(tier, pos);
+        if (!level.isClientSide) network.update();
         getSubNetworks().add(network);
     }
 

@@ -3,6 +3,7 @@ package mod.kerzox.dispatch.common.capability.energy;
 import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.common.capability.*;
 import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
+import mod.kerzox.dispatch.common.event.CommonEvents;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -31,18 +32,29 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     private HashSet<LevelNode> nodesWithExtraction = new HashSet<>();
     private HashSet<LevelNode> nodesWithInsertion = new HashSet<>();
 
+    private int tick;
+
+    private boolean energyFlow;
+
     public EnergySubNetwork(EnergyNetworkHandler network, BlockPos pos, DispatchItem.Tiers tier) {
         super(network, ForgeCapabilities.ENERGY, tier, pos);
     }
 
     @Override
     public void tick() {
+        tick++;
         AtomicInteger current = new AtomicInteger(this.storage.getEnergyStored());
         // try to extract first
         if (current.get() < this.storage.getMaxEnergyStored())
             tryExtraction();
 
-        if (current.get() <= 0) return;
+        if (current.get() <= 0) {
+            if (CommonEvents.every(tick, 1)) {
+                energyFlow = false;
+            }
+            return;
+        }
+        energyFlow = true;
 
         Set<IEnergyStorage> consumers = getAvailableConsumers();
         if (consumers.size() == 0) return;
@@ -55,6 +67,10 @@ public class EnergySubNetwork extends AbstractSubNetwork {
             current.set(storage.getEnergyStored());
         }
 
+    }
+
+    public boolean isEnergyFlowing() {
+        return energyFlow;
     }
 
     @Override
@@ -150,8 +166,10 @@ public class EnergySubNetwork extends AbstractSubNetwork {
                     if (subNetwork.isEmpty()) return;
                     AbstractSubNetwork subNet = subNetwork.get();
                     if (subNet != this && subNet instanceof EnergySubNetwork subNetwork1) {
-                        if (subNetwork1.getStorage().getEnergyStored() < subNetwork1.getStorage().getMaxEnergyStored())
-                            consumers.add(subNetwork1.getStorage());
+                        if (subNetwork1.getNodeByPosition(neighbourPos).getDirectionalIO().get(direction.getOpposite()) != LevelNode.IOTypes.NONE) {
+                            if (subNetwork1.getStorage().getEnergyStored() < subNetwork1.getStorage().getMaxEnergyStored())
+                                consumers.add(subNetwork1.getStorage());
+                        }
                     }
                 });
 
@@ -173,11 +191,13 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     public CompoundTag write() {
         CompoundTag tag = new CompoundTag();
         tag.put("energy", this.storage.serializeNBT());
+        tag.putBoolean("hasFlow", this.energyFlow);
         return tag;
     }
 
     @Override
     public void read(CompoundTag tag) {
+        this.energyFlow = tag.getBoolean("hasFlow");
         this.storage.read(tag);
     }
 

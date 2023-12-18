@@ -6,6 +6,7 @@ import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
+import mod.kerzox.dispatch.common.capability.energy.EnergySubNetwork;
 import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import mod.kerzox.dispatch.common.network.LevelNetworkPacket;
@@ -42,6 +43,9 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DispatchNetwo
     public static final ResourceLocation CORE = new ResourceLocation(Dispatch.MODID, "block/cable");
 
     public static final ResourceLocation CORE_ENERGY = new ResourceLocation(Dispatch.MODID, "block/energy_cable");
+    public static final ResourceLocation ENERGY_CONNECTED = new ResourceLocation(Dispatch.MODID, "block/energy_cable_connected");
+    public static final ResourceLocation ENERGY_BEAM = new ResourceLocation(Dispatch.MODID, "block/energy_beam");
+
     public static final ResourceLocation CORE_FLUID = new ResourceLocation(Dispatch.MODID, "block/fluid_cable");
     public static final ResourceLocation CORE_ITEM = new ResourceLocation(Dispatch.MODID, "block/item_cable");
 
@@ -83,8 +87,12 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DispatchNetwo
                     colours.set(RenderingUtil.convertColor(list.get(0).getRenderingColour()));
                     renderCore(list.get(0).getCapability(), list.get(0).getTier(), pBufferSource, pBlockEntity, pPackedOverlay, pose, colours, pPackedLight, pPackedOverlay, builder);
                     pBlockEntity.getConnectedSides().forEach((connectedDirection, face) -> {
-                        renderPipeConnection(pBlockEntity, list.get(0), pPoseStack, pPackedOverlay, pose, colours, model, pPackedLight, pPackedOverlay, builder, connectedDirection, face == DispatchNetworkEntity.Face.CONNECTION);
+                        renderPipeConnection(pBlockEntity, list.get(0), pose.asStack(), pPackedOverlay, pose, colours, getConnectionModel(list.get(0)), pPackedLight, pPackedOverlay, builder, connectedDirection, face == DispatchNetworkEntity.Face.CONNECTION);
                     });
+//                    pBlockEntity.getConnectedSides().forEach((connectedDirection, face) -> {
+//
+//                    });
+
                     pose.pop();
                 } else {
                     colours.set(RenderingUtil.convertColor(0xFF323232));
@@ -99,26 +107,13 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DispatchNetwo
             }
         });
 
-//        if (pBlockEntity.getSubtypes().size() <= 1) {
-//            pose.push();
-//            for (PipeTypes subtype : pBlockEntity.getSubtypes()) {
-//                colours.set(RenderingUtil.convertColor(subtype.getTint()));
-//            }
-//            renderCore(pBlockEntity, pPackedOverlay, pose, colours, pPackedLight, pPackedOverlay, builder);
-//            pBlockEntity.getVisualConnectionMap().forEach((connectedDirection, connected) -> {
-//                renderPipeConnection(pBlockEntity, pPoseStack, pPackedOverlay, pose, colours, model, pPackedLight, pPackedOverlay, builder, connectedDirection, connected);
-//            });
-//            pose.pop();
-//        } else {
-//            colours.set(RenderingUtil.convertColor(0xf14f4f));
-//            pose.push();
-//            renderCore(pBlockEntity, pPackedOverlay, pose, colours, pPackedLight, pPackedOverlay, builder, model2);
-//            pBlockEntity.getVisualConnectionMap().forEach((connectedDirection, connected) -> {
-//                renderPipeConnection(pBlockEntity, pPoseStack, pPackedOverlay, pose, colours, model1, pPackedLight, pPackedOverlay, builder, connectedDirection, connected);
-//            });
-//            pose.pop();
-//        }
+    }
 
+    private BakedModel getConnectionModel(AbstractSubNetwork subNetwork) {
+        if(subNetwork.getCapability() == ForgeCapabilities.ENERGY) {
+            return Minecraft.getInstance().getModelManager().getModel(ENERGY_CONNECTED);
+        }
+        return Minecraft.getInstance().getModelManager().getModel(CONNECTED);
     }
 
     private void renderCore(DispatchNetworkEntity pBlockEntity, int pPackedOverlay, WrappedPose pose, AtomicReference<float[]> colours, int blockLight, int skyLight, VertexConsumer builder, BakedModel model2) {
@@ -139,11 +134,11 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DispatchNetwo
             RenderingUtil.renderQuads(pose.last(), builder, 1, 1, 1, 1f,
                     quads, LightTexture.pack(blockLight, skyLight), pPackedOverlay);
 
-            float[] bcolour = RenderingUtil.convertColor(DispatchUtil.getTintFromTier(tier));
-
-            List<BakedQuad> quads2 = getQuads(Minecraft.getInstance().getModelManager().getModel(BORDER), pBlockEntity, direction, RenderType.cutout());
-            RenderingUtil.renderQuads(pose.last(), builder, bcolour[0], bcolour[1], bcolour[2], 1f,
-                    quads2, LightTexture.pack(blockLight, skyLight), pPackedOverlay);
+//            float[] bcolour = RenderingUtil.convertColor(DispatchUtil.getTintFromTier(tier));
+//
+//            List<BakedQuad> quads2 = getQuads(Minecraft.getInstance().getModelManager().getModel(BORDER), pBlockEntity, direction, RenderType.cutout());
+//            RenderingUtil.renderQuads(pose.last(), builder, bcolour[0], bcolour[1], bcolour[2], 1f,
+//                    quads2, LightTexture.pack(blockLight, skyLight), pPackedOverlay);
         }
 
     }
@@ -172,12 +167,31 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DispatchNetwo
                 pose.rotateY(-90);
             }
 
-            float[] c = RenderingUtil.convertColor(subNetwork != null ? subNetwork.getRenderingColour() : 0xffffff);
+            float[] c = subNetwork != null ? RenderingUtil.convertColor(DispatchUtil.getTintFromTier(subNetwork.getTier())) : RenderingUtil.convertColor(0xffffff);
 
             for (Direction direction : Direction.values()) {
                 List<BakedQuad> quads = getQuads(model, pBlockEntity, direction, RenderType.cutout());
                 RenderingUtil.renderQuads(pPoseStack.last(), builder,  c[0], c[1], c[2], 1f,
                         quads, LightTexture.pack(blockLight, skyLight), pPackedOverlay);
+            }
+
+            float[] energy = RenderingUtil.convertColor(RenderingUtil.custom("0x49ff7d", 45));
+
+            if (subNetwork instanceof EnergySubNetwork energySubNetwork) {
+                pose.push();
+                if (energySubNetwork.isEnergyFlowing()) {
+                    for (Direction direction : Direction.values()) {
+                        List<BakedQuad> quads = getQuads(Minecraft.getInstance().getModelManager().getModel(ENERGY_BEAM), pBlockEntity, direction, RenderType.cutout());
+                        RenderingUtil.renderQuads(pPoseStack.last(), builder,  energy[0], energy[1], energy[2], 1f,
+                                quads, LightTexture.pack(blockLight, skyLight), pPackedOverlay);
+                    }
+//                                for (Direction direction : Direction.values()) {
+//                                    if (connectedDirection.getAxis() == Direction.Axis.Z) {
+//                                        RenderingUtil.drawQuad(pose.asStack(), pBufferSource.getBuffer(DispatchRenderTypes.SOLID_COLOUR), direction, pPackedLight, 7.5f / 16f, 7.5f / 16f, .5f, 8.5f / 16f, 8.5f / 16f, 1, RenderingUtil.custom("0x49ff7d", 45));
+//                                    }
+//                                }
+                }
+                pose.pop();
             }
 
             pose.pop();
