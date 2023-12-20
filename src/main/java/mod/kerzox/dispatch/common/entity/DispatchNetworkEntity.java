@@ -74,7 +74,9 @@ public class DispatchNetworkEntity extends SyncBlockEntity {
 
                 if (be != null && !(be instanceof DispatchNetworkEntity)) {
                     // show a visual connection
-                    if (be.getCapability(subNetwork.getCapability()).isPresent()) addVisualConnection(direction);
+                    if (be.getCapability(subNetwork.getCapability()).isPresent()) {
+                        addVisualConnection(direction);
+                    }
                 }
 
                 LevelNetworkHandler.getHandler(level).getSubnetFromPos(subNetwork.getCapability(), LevelNode.of(neighbour)).ifPresent(otherSub -> {

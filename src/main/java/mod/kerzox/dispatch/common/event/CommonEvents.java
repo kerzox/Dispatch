@@ -1,19 +1,30 @@
 package mod.kerzox.dispatch.common.event;
 
+import mod.kerzox.dispatch.client.menu.CableMenu;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
 import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
+import mod.kerzox.dispatch.registry.DispatchRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.CraftingMenu;
+import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
+import net.minecraftforge.network.NetworkHooks;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -116,7 +127,12 @@ public class CommonEvents {
         Player player = event.getEntity();
 
         if (!level.isClientSide) {
-            if (player instanceof ServerPlayer player1) Objects.requireNonNull(LevelNetworkHandler.getHandler(level)).openScreenAt(player1, event.getPos());
+            if (player instanceof ServerPlayer player1) {
+                NetworkHooks.openScreen(player1, new SimpleMenuProvider((id, inv, toPlayer) ->
+                        new CableMenu(id, inv, toPlayer, event.getPos(), LevelNetworkHandler.getHandler(level).getSubnetsFrom(LevelNode.of(event.getPos()))),
+                        Component.literal("Cable Screen")),
+                        event.getPos());
+            }
         }
 
     }

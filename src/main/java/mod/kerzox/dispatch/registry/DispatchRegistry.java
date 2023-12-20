@@ -1,8 +1,12 @@
 package mod.kerzox.dispatch.registry;
 
+import mod.kerzox.dispatch.client.menu.CableMenu;
 import mod.kerzox.dispatch.common.block.DispatchBlock;
+import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
+import mod.kerzox.dispatch.common.capability.LevelNode;
 import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.item.DispatchItem;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -11,6 +15,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -19,6 +24,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraftforge.registries.DeferredRegister;
@@ -91,6 +97,13 @@ public class DispatchRegistry {
     }
 
     public static final class Menus {
+
+        public static final RegistryObject<MenuType<CableMenu>> CABLE_MENU = MENUS.register("cable_menu", () -> IForgeMenuType.create((windowId, inv, data) -> {
+            BlockPos pos = data.readBlockPos();
+            Level level = inv.player.level();
+            return new CableMenu(windowId, inv, inv.player, pos, LevelNetworkHandler.getHandler(level).getSubnetsFrom(LevelNode.of(pos)));
+        }));
+
         public static void init() {
 
         }

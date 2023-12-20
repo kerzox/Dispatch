@@ -76,6 +76,10 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     @Override
     public void update() {
         findInventories();
+        // change capacity based on number of cables
+        storage.capacity = nodes.size() * Config.getEnergyCapacity(getTier());
+        storage.maxExtract = storage.capacity;
+        storage.maxReceive = storage.capacity;
     }
 
     /**
@@ -181,10 +185,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
 
     @Override
     protected void postAttachment(LevelNode pos) {
-        // change capacity based on number of cables
-        storage.capacity = nodes.size() * Config.getEnergyCapacity(getTier());
-        storage.maxExtract = storage.capacity;
-        storage.maxReceive = storage.capacity;
+
     }
 
     @Override
@@ -225,7 +226,7 @@ public class EnergySubNetwork extends AbstractSubNetwork {
     @Override
     public void mergeData(BlockPos chosenPosition, AbstractSubNetwork network) {
         if (network instanceof EnergySubNetwork subNetwork) {
-            this.storage.addEnergy(subNetwork.storage.energy);
+            subNetwork.storage.consumeEnergy(this.storage.addEnergyWithReturn(subNetwork.storage.energy));
         }
     }
 

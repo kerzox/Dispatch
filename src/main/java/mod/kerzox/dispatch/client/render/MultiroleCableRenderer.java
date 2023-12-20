@@ -47,7 +47,10 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DispatchNetwo
     public static final ResourceLocation ENERGY_BEAM = new ResourceLocation(Dispatch.MODID, "block/energy_beam");
 
     public static final ResourceLocation CORE_FLUID = new ResourceLocation(Dispatch.MODID, "block/fluid_cable");
+    public static final ResourceLocation FLUID_CONNECTED = new ResourceLocation(Dispatch.MODID, "block/fluid_cable_connected");
+
     public static final ResourceLocation CORE_ITEM = new ResourceLocation(Dispatch.MODID, "block/item_cable");
+    public static final ResourceLocation ITEM_CONNECTED = new ResourceLocation(Dispatch.MODID, "block/item_cable_connected");
 
 
     public static final ResourceLocation BORDER = new ResourceLocation(Dispatch.MODID, "block/border");
@@ -112,6 +115,12 @@ public class MultiroleCableRenderer implements BlockEntityRenderer<DispatchNetwo
     private BakedModel getConnectionModel(AbstractSubNetwork subNetwork) {
         if(subNetwork.getCapability() == ForgeCapabilities.ENERGY) {
             return Minecraft.getInstance().getModelManager().getModel(ENERGY_CONNECTED);
+        }
+        if(subNetwork.getCapability() == ForgeCapabilities.FLUID_HANDLER) {
+            return Minecraft.getInstance().getModelManager().getModel(FLUID_CONNECTED);
+        }
+        if(subNetwork.getCapability() == ForgeCapabilities.ITEM_HANDLER) {
+            return Minecraft.getInstance().getModelManager().getModel(ITEM_CONNECTED);
         }
         return Minecraft.getInstance().getModelManager().getModel(CONNECTED);
     }

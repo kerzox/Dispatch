@@ -27,6 +27,7 @@ public class EnergyNetworkHandler extends AbstractNetwork<EnergySubNetwork> {
         long energyAmount = oldNetwork.getStorage().getEnergyStored();
         for (EnergySubNetwork subNetwork : newNetworks) {
             long received = subNetwork.getStorage().addEnergyWithReturn(energyAmount);
+            oldNetwork.getStorage().consumeEnergy(received);
             energyAmount -= received;
         }
     }

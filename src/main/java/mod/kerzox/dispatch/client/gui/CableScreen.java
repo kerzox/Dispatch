@@ -64,38 +64,6 @@ public class CableScreen extends Screen implements ICustomScreen {
         return false;
     }
 
-    private Direction[] getDirectionFromFacing(Direction facing) {
-        Direction[] dir = new Direction[Direction.values().length];
-        if (facing == Direction.SOUTH) {
-            dir[0] = Direction.NORTH;
-            dir[1] = Direction.WEST;
-            dir[2] = Direction.SOUTH;
-            dir[3] = Direction.EAST;
-        }
-        if (facing == Direction.NORTH) {
-            dir[0] = Direction.SOUTH;
-            dir[1] = Direction.EAST;
-            dir[2] = Direction.NORTH;
-            dir[3] = Direction.WEST;
-        }
-        if (facing == Direction.EAST) {
-            dir[0] = Direction.WEST;
-            dir[1] = Direction.SOUTH;
-            dir[2] = Direction.EAST;
-            dir[3] = Direction.NORTH;
-        }
-        if (facing == Direction.WEST) {
-            dir[0] = Direction.EAST;
-            dir[1] = Direction.NORTH;
-            dir[2] = Direction.WEST;
-            dir[3] = Direction.SOUTH;
-        }
-        dir[4] = Direction.UP;
-        dir[5] = Direction.DOWN;
-        return dir;
-    }
-
-
     public static void draw(BlockPos node) {
         Minecraft.getInstance().setScreen(new CableScreen(LevelNode.of(node)));
     }
@@ -105,61 +73,6 @@ public class CableScreen extends Screen implements ICustomScreen {
         this.left = (this.width - this.imageWidth) / 2;
         this.top = (this.height - this.imageHeight) / 2;
 
-        Direction[] dir = getDirectionFromFacing(Minecraft.getInstance().player.getDirection());
-
-        int ioX = 20;
-        int ioY = 8;
-
-        int tabX = 5;
-        int tabY = 59;
-        int spacer = 0;
-
-        for (AbstractSubNetwork network : LevelNetworkHandler.getHandler(level).getSubnetsFrom(node)) {
-
-            capabilityButtons.add(
-                    new CapabilityTabButton(this, new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"),
-                            tabX + spacer, tabY, 15, 15, node, network, (button, i) -> displayTab((CapabilityTabButton) button, i, network))
-            );
-
-            spacer += 17;
-
-            ioButtons.put(network.getCapability(), new ArrayList<>() {
-                {
-                    add(new Pair<>(Direction.UP, new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + 12, ioY, 12, 12,
-                            Component.literal("Up"), Direction.UP, (button, i) -> handleButtonClick((IOHandlerButton) button, Direction.UP, i))));
-                    add(new Pair<>(dir[3], new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX, ioY + 12, 12, 12,
-                            Component.literal("Left Side"), dir[3], (button, i) -> handleButtonClick((IOHandlerButton) button, dir[3], i))));
-                    add(new Pair<>(dir[2], new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX, ioY + (12 * 2), 12, 12,
-                            Component.literal("Front"), dir[2], (button, i) -> handleButtonClick((IOHandlerButton) button, dir[2], i))));
-                    add(new Pair<>(dir[0], new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + 12, ioY + 12, 12, 12,
-                            Component.literal("Right Side"), dir[0], (button, i) -> handleButtonClick((IOHandlerButton) button, dir[0], i))));
-                    add(new Pair<>(Direction.DOWN, new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + 12, ioY + (12 * 2), 12, 12,
-                            Component.literal("Bottom"), Direction.DOWN, (button, i) -> handleButtonClick((IOHandlerButton) button, Direction.DOWN, i))));
-                    add(new Pair<>(dir[1], new IOHandlerButton(CableScreen.this, network, network.getNodeByPosition(node.getPos()), new ResourceLocation(Dispatch.MODID, "textures/gui/cable.png"), ioX + (12 * 2), ioY + 12, 12, 12,
-                            Component.literal("Back"), dir[1], (button, i) -> handleButtonClick((IOHandlerButton) button, dir[1], i))));
-                }
-            });
-
-            for (Pair<Direction, IOHandlerButton> buttonPair : ioButtons.get(network.getCapability())) {
-                addRenderableWidget(buttonPair.getSecond());
-                buttonPair.getSecond().setVisible(false);
-                LevelNetworkHandler.getHandler(level).getSubnetFromPos(network.getCapability(), node).ifPresent(subNetwork -> {
-                    buttonPair.getSecond().setCurrentSetting(subNetwork.getNodeByPosition(node.getPos()).getDirectionalIO().get(buttonPair.getFirst()));
-                });
-            }
-
-        }
-
-        for (ToggleButtonComponent capabilityButton : capabilityButtons) {
-            addRenderableWidget(capabilityButton);
-        }
-
-        capabilityButtons.get(0).setState(true);
-        currentSubNetworkActive = capabilityButtons.get(0).getSubNetwork();
-
-        for (Pair<Direction, IOHandlerButton> buttonPair : ioButtons.get(capabilityButtons.get(0).getSubNetwork().getCapability())) {
-            buttonPair.getSecond().setVisible(true);
-        }
 
     }
 

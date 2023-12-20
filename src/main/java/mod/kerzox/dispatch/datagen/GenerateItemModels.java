@@ -23,11 +23,11 @@ public class GenerateItemModels extends ItemModelProvider {
     @Override
     protected void registerModels() {
         System.out.println("wdasdsad");
-//        for (Map<DispatchItem.Tiers, RegistryObject<Item>> map : DispatchRegistry.Items.DISPATCH_CABLES.values()) {
-//            map.forEach((tiers, itemRegistryObject) -> {
-//                withExistingParent(tiers.getSerializedName()+"_"+itemRegistryObject.getId(), itemRegistryObject.getId());
-//            });
-//        }
+        for (Map<DispatchItem.Tiers, RegistryObject<Item>> map : DispatchRegistry.Items.DISPATCH_CABLES.values()) {
+            map.forEach((tiers, itemRegistryObject) -> {
+                withExistingParent(tiers.getSerializedName()+"_"+itemRegistryObject.getId(), itemRegistryObject.getId());
+            });
+        }
     }
 
 }

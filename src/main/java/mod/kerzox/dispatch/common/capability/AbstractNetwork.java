@@ -139,7 +139,7 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
             BlockPos neighbourPos = chosenPosition.getPos().relative(direction);
             T neighbouringSubnet = getSubnetByPosition(neighbourPos);
 
-            if (neighbouringSubnet == null) continue;
+            if (neighbouringSubnet == null || chosenPosition.getDirectionalIO().get(direction) == LevelNode.IOTypes.NONE) continue;
 
             if (tier == neighbouringSubnet.tier) {
 
@@ -297,7 +297,10 @@ public abstract class AbstractNetwork<T extends AbstractSubNetwork> implements I
 
         });
 
-        if (!newNetworks.isEmpty()) getSubNetworks().addAll(newNetworks);
+        if (!newNetworks.isEmpty()) {
+            getSubNetworks().addAll(newNetworks);
+            splitData(newNode.getPos(), subNetwork, newNetworks);
+        }
 
     }
 

@@ -1,8 +1,10 @@
 package mod.kerzox.dispatch;
 
 import mod.kerzox.dispatch.client.RenderLevelNetworks;
+import mod.kerzox.dispatch.client.gui.CableContainerScreen;
 import mod.kerzox.dispatch.client.render.MultiroleCableRenderer;
 import mod.kerzox.dispatch.registry.DispatchRegistry;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraftforge.api.distmarker.Dist;
@@ -25,6 +27,8 @@ public class ClientSetup {
         event.register(MultiroleCableRenderer.CORE);
         event.register(MultiroleCableRenderer.CORE_ENERGY);
         event.register(MultiroleCableRenderer.ENERGY_CONNECTED);
+        event.register(MultiroleCableRenderer.ITEM_CONNECTED);
+        event.register(MultiroleCableRenderer.FLUID_CONNECTED);
         event.register(MultiroleCableRenderer.ENERGY_BEAM);
         event.register(MultiroleCableRenderer.CORE_FLUID);
         event.register(MultiroleCableRenderer.CORE_ITEM);
@@ -33,6 +37,7 @@ public class ClientSetup {
 
     public static void init(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
+            MenuScreens.register(DispatchRegistry.Menus.CABLE_MENU.get(), CableContainerScreen::new);
             BlockEntityRenderers.register(DispatchRegistry.BlockEntities.DISPATCH_ENTITY.get(), MultiroleCableRenderer::new);
         });
         MinecraftForge.EVENT_BUS.register(new RenderLevelNetworks());

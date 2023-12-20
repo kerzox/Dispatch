@@ -156,24 +156,14 @@ public class ItemSubNetwork extends AbstractSubNetwork {
                 // check for block entities
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
                 if (be != null && !(be instanceof DispatchNetworkEntity)) {
-                    be.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).ifPresent(handler -> {
-                        for (int i = 0; i < handler.getSlots(); i++) {
-
-                            if (direction == Direction.UP && be instanceof HopperBlockEntity) continue;
-
-                            if (handler.getStackInSlot(i).isEmpty()) {
-                                consumers.add(handler);
-                                break;
-                            }
-                        }
-                    });
+                    be.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).ifPresent(consumers::add);
                 }
 
                 getLevel().getCapability(LevelNetworkHandler.NETWORK).map(h -> h.getSubnetFromPos(ForgeCapabilities.ITEM_HANDLER, LevelNode.of(neighbourPos))).ifPresent(subNetwork -> {
                     if (subNetwork.isEmpty()) return;
                     AbstractSubNetwork subNet = subNetwork.get();
                     if (subNet != this && subNet instanceof ItemSubNetwork subNetwork1) {
-                        if (subNetwork1.getItemStackHandler().getStackInSlot(0).isEmpty()) consumers.add(subNetwork1.itemStackHandler);
+                        if (subNetwork1.getNodeByPosition(neighbourPos).getDirectionalIO().get(direction.getOpposite()) != LevelNode.IOTypes.NONE) consumers.add(subNetwork1.itemStackHandler);
                     }
                 });
 
