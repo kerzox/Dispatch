@@ -105,7 +105,7 @@ public class CommonEvents {
     @SubscribeEvent
     public void onWorldTick(net.minecraftforge.event.TickEvent.LevelTickEvent event) {
         if (event.phase == net.minecraftforge.event.TickEvent.Phase.END) {
-            if(event.side == LogicalSide.SERVER) {
+            if (event.side == LogicalSide.SERVER) {
                 serverTick = (serverTick + 1) % 1_728_000;
                 prevServerTick = serverTick;
                 event.level.getCapability(LevelNetworkHandler.NETWORK).ifPresent(capability -> {
@@ -113,8 +113,7 @@ public class CommonEvents {
                         network.tick();
                     }
                 });
-            }
-            else if (event.side == LogicalSide.CLIENT) {
+            } else if (event.side == LogicalSide.CLIENT) {
                 clientRenderTick = (clientRenderTick + 1) % 1_728_000;
                 preVclientRenderTick = clientRenderTick;
             }
@@ -128,10 +127,11 @@ public class CommonEvents {
 
         if (!level.isClientSide) {
             if (player instanceof ServerPlayer player1) {
-                NetworkHooks.openScreen(player1, new SimpleMenuProvider((id, inv, toPlayer) ->
-                        new CableMenu(id, inv, toPlayer, event.getPos(), LevelNetworkHandler.getHandler(level).getSubnetsFrom(LevelNode.of(event.getPos()))),
-                        Component.literal("Cable Screen")),
-                        event.getPos());
+                if (!LevelNetworkHandler.getHandler(level).getSubnetsFrom(LevelNode.of(event.getPos())).isEmpty())
+                    NetworkHooks.openScreen(player1, new SimpleMenuProvider((id, inv, toPlayer) ->
+                                    new CableMenu(id, inv, toPlayer, event.getPos(), LevelNetworkHandler.getHandler(level).getSubnetsFrom(LevelNode.of(event.getPos()))),
+                                    Component.literal("Cable Screen")),
+                            event.getPos());
             }
         }
 
@@ -156,12 +156,11 @@ public class CommonEvents {
                     levelNetwork.addToSpawnInWorld(pos);
 
 
-
                 }
             });
 
             for (Direction direction : Direction.values()) {
-                level.getCapability(LevelNetworkHandler.NETWORK).map(h->h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
+                level.getCapability(LevelNetworkHandler.NETWORK).map(h -> h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
                     for (AbstractSubNetwork subNetwork : abstractSubNetworks) {
                         if (subNetwork != null) subNetwork.update();
                     }
@@ -179,7 +178,7 @@ public class CommonEvents {
         if (levelAcc instanceof Level level) {
 
             for (Direction direction : Direction.values()) {
-                level.getCapability(LevelNetworkHandler.NETWORK).map(h->h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
+                level.getCapability(LevelNetworkHandler.NETWORK).map(h -> h.getSubnetsFrom(LevelNode.of(event.getPos().relative(direction)))).ifPresent(abstractSubNetworks -> {
                     for (AbstractSubNetwork subNetwork : abstractSubNetworks) {
                         subNetwork.update();
                     }

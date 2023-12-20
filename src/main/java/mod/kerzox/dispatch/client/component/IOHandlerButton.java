@@ -21,12 +21,22 @@ import java.util.List;
 
 public class IOHandlerButton extends ButtonComponent {
 
+//    private int[][] colours = {
+//            {36, 112},        // defaultColour
+//            {24, 112},        // outputColour
+//            {12, 112},        // inputColour
+//            {0, 112},         // combinedColour
+//            {48, 112}         // NoneColour
+//    };
+
     private int[][] colours = {
             {36, 112},        // defaultColour
-            {24, 112},        // outputColour
-            {12, 112},        // inputColour
-            {0, 112},         // combinedColour
-            {48, 112}         // NoneColour
+            {24, 112},        // red
+            {12, 112},        // blue
+            {0, 112},         // purple
+            {48, 112},         // black
+            {60, 112} ,        // yellow
+            {72, 112} ,        // green
     };
 
     private LevelNode.IOTypes currentSetting = LevelNode.IOTypes.DEFAULT;
@@ -34,7 +44,8 @@ public class IOHandlerButton extends ButtonComponent {
     private LevelNode node;
     private AbstractSubNetwork subNetwork;
 
-    public IOHandlerButton(ICustomScreen screen, AbstractSubNetwork subNetwork, LevelNode node, ResourceLocation texture, int x, int y, int width, int height, Component component, Direction direction, IPressable btn) {
+    public IOHandlerButton(ICustomScreen screen, AbstractSubNetwork subNetwork,
+                           LevelNode node, ResourceLocation texture, int x, int y, int width, int height, Component component, Direction direction, IPressable btn) {
         super(screen, texture, x, y, width, height, 0,0,0,0, component, btn);
         setTextureOffset(colours[currentSetting.ordinal()][0], colours[currentSetting.ordinal()][1]);
         this.direction = direction;

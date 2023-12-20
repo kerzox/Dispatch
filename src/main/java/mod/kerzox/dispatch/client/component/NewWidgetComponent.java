@@ -1,8 +1,11 @@
 package mod.kerzox.dispatch.client.component;
 
+import com.google.common.collect.Lists;
 import mod.kerzox.dispatch.client.gui.ICustomScreen;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -13,6 +16,7 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -96,6 +100,7 @@ public abstract class NewWidgetComponent implements Renderable, GuiEventListener
     }
 
     protected void onDrag(double p_93636_, double p_93637_, double p_93638_, double p_93639_) {
+
     }
 
     protected void drawToolTips(GuiGraphics graphics, int mouseX, int mouseY, List<Component> component) {
@@ -132,7 +137,36 @@ public abstract class NewWidgetComponent implements Renderable, GuiEventListener
     }
 
     protected boolean isValidClickButton(int p_93652_) {
-        return p_93652_ == 0;
+        return true;
+    }
+
+    public void renderString(GuiGraphics p_283366_, Font p_283054_, int p_281656_) {
+        this.renderScrollingString(p_283366_, p_283054_, 2, p_281656_);
+    }
+
+    protected static void renderScrollingString(GuiGraphics p_281620_, Font p_282651_, Component p_281467_, int p_283621_, int p_282084_, int p_283398_, int p_281938_, int p_283471_) {
+        int i = p_282651_.width(p_281467_);
+        int j = (p_282084_ + p_281938_ - 9) / 2 + 1;
+        int k = p_283398_ - p_283621_;
+        if (i > k) {
+            int l = i - k;
+            double d0 = (double) Util.getMillis() / 1000.0D;
+            double d1 = Math.max((double)l * 0.5D, 3.0D);
+            double d2 = Math.sin((Math.PI / 2D) * Math.cos((Math.PI * 2D) * d0 / d1)) / 2.0D + 0.5D;
+            double d3 = Mth.lerp(d2, 0.0D, (double)l);
+            p_281620_.enableScissor(p_283621_, p_282084_, p_283398_, p_281938_);
+            p_281620_.drawString(p_282651_, p_281467_, p_283621_ - (int)d3, j, p_283471_);
+            p_281620_.disableScissor();
+        } else {
+            p_281620_.drawCenteredString(p_282651_, p_281467_, (p_283621_ + p_283398_) / 2, j, p_283471_);
+        }
+
+    }
+
+    protected void renderScrollingString(GuiGraphics p_281857_, Font p_282790_, int p_282664_, int p_282944_) {
+        int i = this.getCorrectX() + p_282664_;
+        int j = this.getCorrectX() + this.getWidth() - p_282664_;
+        renderScrollingString(p_281857_, p_282790_, this.getMessage(), i, this.getCorrectY(), j, this.getCorrectY() + this.getHeight(), p_282944_);
     }
 
     public boolean mouseDragged(double p_93645_, double p_93646_, int p_93647_, double p_93648_, double p_93649_) {

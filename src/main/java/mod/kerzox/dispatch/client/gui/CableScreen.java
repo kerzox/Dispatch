@@ -7,6 +7,7 @@ import mod.kerzox.dispatch.Dispatch;
 import mod.kerzox.dispatch.client.component.CapabilityTabButton;
 import mod.kerzox.dispatch.client.component.IOHandlerButton;
 import mod.kerzox.dispatch.client.component.ToggleButtonComponent;
+import mod.kerzox.dispatch.client.menu.CableMenu;
 import mod.kerzox.dispatch.client.render.RenderingUtil;
 import mod.kerzox.dispatch.common.capability.AbstractNetwork;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
@@ -213,5 +214,10 @@ public class CableScreen extends Screen implements ICustomScreen {
     @Override
     public int getGuiTop() {
         return top;
+    }
+
+    @Override
+    public CableMenu getMenu() {
+        return null;
     }
 }

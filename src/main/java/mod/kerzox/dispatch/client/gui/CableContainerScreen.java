@@ -3,9 +3,7 @@ package mod.kerzox.dispatch.client.gui;
 import com.mojang.datafixers.util.Pair;
 import mod.kerzox.dispatch.Config;
 import mod.kerzox.dispatch.Dispatch;
-import mod.kerzox.dispatch.client.component.CapabilityTabButton;
-import mod.kerzox.dispatch.client.component.IOHandlerButton;
-import mod.kerzox.dispatch.client.component.ToggleButtonComponent;
+import mod.kerzox.dispatch.client.component.*;
 import mod.kerzox.dispatch.client.menu.CableMenu;
 import mod.kerzox.dispatch.client.render.RenderingUtil;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
@@ -15,11 +13,14 @@ import mod.kerzox.dispatch.common.network.LevelNetworkPacket;
 import mod.kerzox.dispatch.common.network.PacketHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.Capability;
@@ -46,6 +47,19 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
     private List<CapabilityTabButton> capabilityButtons = new ArrayList<>();
     private LevelNode node;
     private AbstractSubNetwork currentSubNetworkActive;
+    private ConfigurateOperation operation = new ConfigurateOperation(this, 0 ,0);
+    private List<ConfigurateOperation> operations= new ArrayList<>();
+
+    private ButtonComponent openNewOperation = new ButtonComponent(this,
+            new ResourceLocation(Dispatch.MODID, "textures/gui/widgets.png"),
+            84, 64, 75, 12, 0, 148, 0, 160, Component.literal("New Operation"), this::openOperation){
+        @Override
+        public void drawComponent(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
+            super.drawComponent(graphics, pMouseX, pMouseY, pPartialTick);
+            int i = 16777215;
+            this.renderString(graphics, Minecraft.getInstance().font, i | Mth.ceil(this.alpha * 255.0F) << 24);
+        }
+    };
 
     public CableContainerScreen(CableMenu p_97741_, Inventory p_97742_, Component p_97743_) {
         super(p_97741_, p_97742_, p_97743_);
@@ -200,6 +214,42 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
         for (Pair<Direction, IOHandlerButton> buttonPair : ioButtons.get(capabilityButtons.get(0).getSubNetwork().getCapability())) {
             buttonPair.getSecond().setVisible(true);
         }
+
+        FilterList list = new FilterList(this, 84, 5);
+
+        addRenderableWidget(list);
+        addRenderableWidget(list.getScrollBarComponent());
+        operation.setVisible(false);
+        operation.setVisible(false);
+        addRenderableWidget(operation);
+        addRenderableWidget(operation.getButton());
+        addRenderableWidget(openNewOperation);
+
+        for (GuiEventListener child : children()) {
+            if (child instanceof NewWidgetComponent component) component.onInit();
+        }
+
+    }
+
+    private void openOperation(ButtonComponent buttonComponent, int i) {
+        if (!operation.visible) {
+            openNewOperation.setVisible(false);
+            operation.recreatePage();
+
+            for (CapabilityTabButton button : capabilityButtons) {
+                button.setVisible(false);
+            }
+            ioButtons.forEach((capability, pairs) ->
+                    pairs.forEach(directionIOHandlerButtonPair -> directionIOHandlerButtonPair.getSecond().setVisible(false)));
+        }
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (this.getChildAt(mouseX, mouseY).map(p -> p.mouseDragged(mouseX, mouseY, button, dragX, dragY)).orElse(false)) {
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
     }
 
     @Override
@@ -208,10 +258,10 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
     }
 
     @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int pMouseX, int pMouseY) {
-        int i = (this.width - this.imageWidth) / 2 + guiX;
-        int j = (this.height - this.imageHeight) / 2 + guiY;
-        graphics.blit(texture, i, j, 0, 0, this.imageWidth, this.imageHeight, 256, 256);
+    public void render(GuiGraphics graphics, int p_283661_, int p_281248_, float p_281886_) {
+        super.renderBackground(graphics);
+        super.render(graphics, p_283661_, p_281248_, p_281886_);
+        this.renderTooltip(graphics, p_283661_, p_281248_);
 
         if (Config.DEBUG_MODE && currentSubNetworkActive != null) {
 
@@ -259,6 +309,14 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
                 );
             });
         }
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics graphics, float partialTick, int pMouseX, int pMouseY) {
+        int i = (this.width - this.imageWidth) / 2 + guiX;
+        int j = (this.height - this.imageHeight) / 2 + guiY;
+        graphics.blit(texture, i, j, 0, 0, this.imageWidth, this.imageHeight, 256, 256);
+
     }
 
 
