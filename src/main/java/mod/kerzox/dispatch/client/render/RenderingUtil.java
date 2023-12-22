@@ -273,6 +273,11 @@ public class RenderingUtil {
 
     public static int defaultGrey = 4210752;
 
+    public static void drawText(Component component, GuiGraphics graphics, int x, int y, int colour) {
+        FormattedCharSequence title = component.getVisualOrderText();
+        graphics.drawString(Minecraft.getInstance().font, title, x, y, colour, false);
+    }
+
     public static void drawText(String string, GuiGraphics graphics, int x, int y, int colour) {
         FormattedCharSequence title = Component.literal(string).getVisualOrderText();
         graphics.drawString(Minecraft.getInstance().font, title, x, y, colour, false);

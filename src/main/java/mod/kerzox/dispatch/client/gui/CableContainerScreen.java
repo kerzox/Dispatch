@@ -9,8 +9,12 @@ import mod.kerzox.dispatch.client.render.RenderingUtil;
 import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
+import mod.kerzox.dispatch.common.capability.NodeOperation;
+import mod.kerzox.dispatch.common.capability.item.ItemNodeOperation;
+import mod.kerzox.dispatch.common.capability.item.ItemSubNetwork;
 import mod.kerzox.dispatch.common.network.LevelNetworkPacket;
 import mod.kerzox.dispatch.common.network.PacketHandler;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -18,10 +22,14 @@ import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.Capability;
 
@@ -29,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CableContainerScreen extends AbstractContainerScreen<CableMenu> implements ICustomScreen {
 
@@ -43,16 +52,28 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
     protected int guiX;
     protected int guiY;
 
+    private NodeOperation operationToRemove;
+
     private Map<Capability<?>, List<Pair<Direction, IOHandlerButton>>> ioButtons = new HashMap<>();
     private List<CapabilityTabButton> capabilityButtons = new ArrayList<>();
     private LevelNode node;
     private AbstractSubNetwork currentSubNetworkActive;
-    private ConfigurateOperation operation = new ConfigurateOperation(this, 0 ,0);
-    private List<ConfigurateOperation> operations= new ArrayList<>();
+    private ConfigurateOperation operation = new ConfigurateOperation(this, 0, 0);
+    private List<ConfigurateOperation> operations = new ArrayList<>();
+
+    public List<CapabilityTabButton> getCapabilityButtons() {
+        return capabilityButtons;
+    }
+
+    public Map<Capability<?>, List<Pair<Direction, IOHandlerButton>>> getIoButtons() {
+        return ioButtons;
+    }
+
+    private FilterList list = new FilterList(this, 84, 5);
 
     private ButtonComponent openNewOperation = new ButtonComponent(this,
             new ResourceLocation(Dispatch.MODID, "textures/gui/widgets.png"),
-            84, 64, 75, 12, 0, 148, 0, 160, Component.literal("New Operation"), this::openOperation){
+            84, 64, 75, 12, 0, 148, 0, 160, Component.literal("New"), this::openOperation) {
         @Override
         public void drawComponent(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
             super.drawComponent(graphics, pMouseX, pMouseY, pPartialTick);
@@ -60,6 +81,19 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
             this.renderString(graphics, Minecraft.getInstance().font, i | Mth.ceil(this.alpha * 255.0F) << 24);
         }
     };
+
+    private ButtonComponent deleteFilter = new ButtonComponent(this,
+            new ResourceLocation(Dispatch.MODID, "textures/gui/widgets.png"),
+            84 + 75, 64, 12, 12, 24, 124, 24, 124+12, Component.literal("Delete Filter"), this::removeOperation) {
+    };
+
+    private void removeOperation(ButtonComponent buttonComponent, int i) {
+        if (operationToRemove != null) {
+            getNodeProper().removeOperation(operationToRemove);
+            PacketHandler.sendToServer(LevelNetworkPacket.of(currentSubNetworkActive.getCapability(), getNodeProper()));
+            operationToRemove = null;
+        }
+    }
 
     public CableContainerScreen(CableMenu p_97741_, Inventory p_97742_, Component p_97743_) {
         super(p_97741_, p_97742_, p_97743_);
@@ -104,6 +138,9 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
         return dir;
     }
 
+    public FilterList getList() {
+        return list;
+    }
 
     private void displayTab(CapabilityTabButton capabilityTabButton, int button, AbstractSubNetwork network) {
 
@@ -215,8 +252,6 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
             buttonPair.getSecond().setVisible(true);
         }
 
-        FilterList list = new FilterList(this, 84, 5);
-
         addRenderableWidget(list);
         addRenderableWidget(list.getScrollBarComponent());
         operation.setVisible(false);
@@ -224,24 +259,121 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
         addRenderableWidget(operation);
         addRenderableWidget(operation.getButton());
         addRenderableWidget(openNewOperation);
+        addRenderableWidget(operation.getDirectionButton());
+        addRenderableWidget(operation.getSaveButton());
+        addRenderableWidget(operation.getTextBoxComponent());
+        addRenderableWidget(operation.getDownArrowButton());
+        addRenderableWidget(operation.getPriorityText());
+        addRenderableWidget(deleteFilter);
+        for (ButtonComponent optionButton : operation.getOptionButtons()) {
+            addRenderableWidget(optionButton);
+        }
+        operation.closeOperationPage();
 
         for (GuiEventListener child : children()) {
             if (child instanceof NewWidgetComponent component) component.onInit();
         }
 
+        refreshFilters();
+
+    }
+
+    public ButtonComponent getDeleteFilter() {
+        return deleteFilter;
+    }
+
+    public void refreshFilters() {
+        List<ButtonComponent> components = new ArrayList<>(getList().getAvailableFilters());
+        getList().getAvailableFilters().clear();
+        LevelNetworkHandler.getHandler(level).getSubnetFromPos(currentSubNetworkActive.getCapability(), getNodeProper()).ifPresent(subNetwork -> {
+            if (subNetwork instanceof ItemSubNetwork itemSub) {
+                AtomicInteger y = new AtomicInteger(6);
+
+                getNodeProper().getOperations().forEach((direction, operations) -> {
+                    for (NodeOperation operation : operations) {
+                        if (operation instanceof ItemNodeOperation itemNodeOperation) {
+                            getList().getAvailableFilters().add(
+                                    new ToggleButtonComponent(this, new ResourceLocation(Dispatch.MODID, "textures/gui/widgets.png"),
+                                            85, y.get(), 78, 11, 0, 184, 0, 184 + 11, Component.literal("Operation"),
+                                            this::operationClicked) {
+
+                                        @Override
+                                        public void onClick(double mouseX, double mouseY, int button) {
+                                            super.onClick(mouseX, mouseY, button);
+                                            operationToRemove = itemNodeOperation;
+                                        }
+
+                                        private int index;
+                                        private int frameTick;
+
+                                        @Override
+                                        public void drawComponent(GuiGraphics graphics, int pMouseX, int pMouseY, float pPartialTick) {
+                                            if (visible) {
+                                                super.drawComponent(graphics, pMouseX, pMouseY, pPartialTick);
+                                                graphics.pose().pushPose();
+                                                float scaled = .5f / .5f;
+                                                graphics.pose().scale(.5f, .5f, .5f);
+                                                graphics.pose().translate(getCorrectX() * scaled, getCorrectY() * scaled, 0);
+                                                if (!itemNodeOperation.getItemStacks().isEmpty()) {
+                                                    if (frameTick % 60 == 0) {
+                                                        index = (index + 1) % itemNodeOperation.getItemStacks().size();
+                                                    }
+
+                                                    graphics.renderItem(itemNodeOperation.getItemStacks().get(index), (int) (getCorrectX() * scaled) + 4, (int) (getCorrectY() * scaled) + 2);
+                                                }
+                                                graphics.pose().popPose();
+                                                frameTick++;
+                                            }
+                                        }
+                                    });
+                            y.addAndGet(11);
+                        }
+                    }
+                });
+            }
+        });
+
+        if (!components.equals(getList().getAvailableFilters())) {
+            getMenu().setRefreshOps(false);
+        }
+
+    }
+
+    private void operationClicked(ButtonComponent buttonComponent, int i) {
     }
 
     private void openOperation(ButtonComponent buttonComponent, int i) {
         if (!operation.visible) {
-            openNewOperation.setVisible(false);
-            operation.recreatePage();
-
-            for (CapabilityTabButton button : capabilityButtons) {
-                button.setVisible(false);
-            }
-            ioButtons.forEach((capability, pairs) ->
-                    pairs.forEach(directionIOHandlerButtonPair -> directionIOHandlerButtonPair.getSecond().setVisible(false)));
+            operation.recreatePage(currentSubNetworkActive);
         }
+    }
+
+    @Override
+    protected void containerTick() {
+        for (GuiEventListener child : children()) {
+            if (child instanceof NewWidgetComponent component && component.active && component.visible)
+                component.tick();
+        }
+       if (getMenu().isRefreshOps()) {
+           refreshFilters();
+       }
+    }
+
+    @Override
+    public boolean keyPressed(int p_97765_, int p_97766_, int p_97767_) {
+        if (operation.getTextBoxComponent().isFocused()) {
+            if (operation.getTextBoxComponent().keyPressed(p_97765_, p_97766_, p_97767_)) return true;
+            return true;
+        }
+        return super.keyPressed(p_97765_, p_97766_, p_97767_);
+    }
+
+    public LevelNode getNodeProper() {
+        if (currentSubNetworkActive != null) {
+            return LevelNetworkHandler.getHandler(level).getSubnetFromPos(currentSubNetworkActive.getCapability(), node)
+                    .map(subNetwork -> subNetwork.getNodeByPosition(node.getPos())).orElse(null);
+        }
+        return null;
     }
 
     @Override
@@ -307,6 +439,7 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
                         y += 10,
                         0xff6565
                 );
+
             });
         }
     }
@@ -320,5 +453,12 @@ public class CableContainerScreen extends AbstractContainerScreen<CableMenu> imp
     }
 
 
+    public NewWidgetComponent getOpenOperationButton() {
+        return openNewOperation;
+    }
+
+    public AbstractSubNetwork getCurrentSubnet() {
+        return currentSubNetworkActive;
+    }
 
 }

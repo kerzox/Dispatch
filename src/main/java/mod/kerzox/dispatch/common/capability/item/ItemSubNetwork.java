@@ -1,27 +1,25 @@
 package mod.kerzox.dispatch.common.capability.item;
 
-import mod.kerzox.dispatch.common.capability.AbstractNetwork;
-import mod.kerzox.dispatch.common.capability.AbstractSubNetwork;
-import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
-import mod.kerzox.dispatch.common.capability.LevelNode;
+import mod.kerzox.dispatch.common.capability.*;
 import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /*
     TODO
@@ -43,40 +41,116 @@ public class ItemSubNetwork extends AbstractSubNetwork {
         super(network, ForgeCapabilities.ITEM_HANDLER, tier, pos);
     }
 
+    /*
+                for (ItemNodeOperation operation : operationsAvailable) {
+
+                //TODO replace this with tiered insert amounts
+                int maxInsert = Math.min(8, inventoryStack.getCount());
+
+                for (int i = 0; i < consumer.getSlots(); i++) {
+                    ItemStack insertStack = itemStackHandler.extractItem(0, maxInsert, true);
+                    ItemStack ret = consumer.insertItem(i, insertStack, false);
+                    itemStackHandler.extractItem(0, maxInsert, false);
+                    if (ret.isEmpty()) return;
+                    itemStackHandler.insertItem(0, ret, false);
+
+                }
+     */
+
     @Override
     public void tick() {
         ItemStack inventoryStack = itemStackHandler.getStackInSlot(0).copy();
 
-        // try to extract first
+//        // try to extract first
         if (inventoryStack.getCount() < itemStackHandler.getSlotLimit(0))
             tryExtraction();
 
         if (inventoryStack.isEmpty()) return;
 
-        List<IItemHandler> consumers = getAvailableConsumers();
-        if (consumers.size() == 0) return;
+        // try to insert into any available inventories
 
-        for (IItemHandler consumer : consumers) {
+        for (LevelNode node : nodesWithInventories) {
+            for (Direction direction : Direction.values()) {
+                List<NodeOperation> operationsAvailable = node.getOperations().get(direction);
+                IItemHandler handler = getConsumerInDirection(node, direction);
+                if (handler == null) continue;
+                if (operationsAvailable != null) {
+                    boolean directionHasOperation = false;
+                    for (NodeOperation operation : operationsAvailable) {
+                        if (operation instanceof ItemNodeOperation itemNodeOperation) {
+                            directionHasOperation = true;
+                            // check if we are blacklisting items or whitelisting
+                            if (!itemNodeOperation.isBlackList()) {
+                                // we are whitelisting items so we only want to transfer this if its the same
+                                if (itemNodeOperation.getItemStacks().stream().noneMatch(item -> item.is(inventoryStack.getItem())))
+                                    continue; // our operation doesn't have the same itemstack so we ignore this operation.
+                            } else {
+                                // we are blacklisting items so we never want to transfer the item if its the same
+                                if (itemNodeOperation.getItemStacks().stream().anyMatch(item -> item.is(inventoryStack.getItem())))
+                                    continue; // our operation doesn't have the same itemstack so we ignore this operation.
+                            }
 
-            // replace this with tiered insert amounts
-            int maxInsert = Math.min(8, inventoryStack.getCount());
+                            //TODO match nbt and size
 
-            for (int i = 0; i < consumer.getSlots(); i++) {
-                ItemStack insertStack =  itemStackHandler.extractItem(0, maxInsert, true);
-                ItemStack ret = consumer.insertItem(i, insertStack, false);
-                itemStackHandler.extractItem(0, maxInsert, false);
-                if (ret.isEmpty()) return;
-                itemStackHandler.insertItem(0, ret, false);
+                            //TODO replace this with tiered insert amounts
+                            if (doInsertion(inventoryStack, handler)) return;
 
+                        }
+                        if (!directionHasOperation) {
+                            if (doInsertion(inventoryStack, handler)) return;
+                        }
+                    }
+                } else {
+                    if (doInsertion(inventoryStack, handler)) return;
+                }
             }
 
         }
 
     }
 
+    private boolean doInsertion(ItemStack inventoryStack, IItemHandler handler) {
+        int maxInsert = Math.min(8, inventoryStack.getCount());
+
+        for (int i = 0; i < handler.getSlots(); i++) {
+            ItemStack insertStack = itemStackHandler.extractItem(0, maxInsert, true);
+            ItemStack ret = handler.insertItem(i, insertStack, false);
+            itemStackHandler.extractItem(0, maxInsert, false);
+            if (ret.isEmpty()) return true;
+            itemStackHandler.insertItem(0, ret, false);
+        }
+        return false;
+    }
+
+    private IItemHandler getConsumerInDirection(LevelNode node, Direction direction) {
+        AtomicReference<IItemHandler> handler = new AtomicReference<>();
+        if (node.getDirectionalIO().get(direction) == LevelNode.IOTypes.EXTRACT) return handler.get();
+        BlockPos neighbourPos = node.getPos().relative(direction);
+
+        // check for block entities
+        BlockEntity be = getLevel().getBlockEntity(neighbourPos);
+        if (be != null && !(be instanceof DispatchNetworkEntity)) {
+            return be.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).resolve().isPresent() ? be.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).resolve().get() : null;
+        }
+
+        getLevel().getCapability(LevelNetworkHandler.NETWORK).map(h -> h.getSubnetFromPos(ForgeCapabilities.ITEM_HANDLER, LevelNode.of(neighbourPos))).ifPresent(subNetwork -> {
+            if (subNetwork.isEmpty()) return;
+            AbstractSubNetwork subNet = subNetwork.get();
+            if (subNet != this && subNet instanceof ItemSubNetwork subNetwork1) {
+                if (subNetwork1.getNodeByPosition(neighbourPos).getDirectionalIO().get(direction.getOpposite()) != LevelNode.IOTypes.NONE) {
+                    handler.set(subNetwork1.itemStackHandler);
+                }
+            }
+        });
+
+        return handler.get();
+    }
+
     @Override
     public void update() {
         findInventories();
+
+        // update priorities here
     }
 
 
@@ -131,10 +205,10 @@ public class ItemSubNetwork extends AbstractSubNetwork {
                                 ItemStack stack = cap.getStackInSlot(i);
                                 if (stack.isEmpty()) continue;
 
-                                stack = stack.copyWithCount(Math.min(8, stack.getCount()));
+                                ItemStack copied = stack.copyWithCount(Math.min(8, stack.getCount()));
 
-                                if (itemStackHandler.insertItem(0, stack, true).isEmpty()) {
-                                    itemStackHandler.insertItem(0, cap.extractItem(i, stack.getCount(), false), false);
+                                if (itemStackHandler.insertItem(0, copied, true).isEmpty()) {
+                                    itemStackHandler.insertItem(0, cap.extractItem(i, copied.getCount(), false), false);
                                 }
                             }
 
@@ -145,8 +219,8 @@ public class ItemSubNetwork extends AbstractSubNetwork {
         }
     }
 
-    public List<IItemHandler> getAvailableConsumers() {
-        List<IItemHandler> consumers = new ArrayList<>();
+    public Map<LevelNode, List<IItemHandler>> getAvailableConsumers() {
+        Map<LevelNode, List<IItemHandler>> consumers = new HashMap<>();
         for (LevelNode node : nodesWithInventories) {
             BlockPos position = node.getPos();
             for (Direction direction : Direction.values()) {
@@ -156,19 +230,19 @@ public class ItemSubNetwork extends AbstractSubNetwork {
                 // check for block entities
                 BlockEntity be = getLevel().getBlockEntity(neighbourPos);
                 if (be != null && !(be instanceof DispatchNetworkEntity)) {
-                    be.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).ifPresent(consumers::add);
+                    be.getCapability(ForgeCapabilities.ITEM_HANDLER, direction.getOpposite()).ifPresent(cap -> consumers.computeIfAbsent(node, node1 -> new ArrayList<>()).add(cap));
                 }
 
                 getLevel().getCapability(LevelNetworkHandler.NETWORK).map(h -> h.getSubnetFromPos(ForgeCapabilities.ITEM_HANDLER, LevelNode.of(neighbourPos))).ifPresent(subNetwork -> {
                     if (subNetwork.isEmpty()) return;
                     AbstractSubNetwork subNet = subNetwork.get();
                     if (subNet != this && subNet instanceof ItemSubNetwork subNetwork1) {
-                        if (subNetwork1.getNodeByPosition(neighbourPos).getDirectionalIO().get(direction.getOpposite()) != LevelNode.IOTypes.NONE) consumers.add(subNetwork1.itemStackHandler);
+                        if (subNetwork1.getNodeByPosition(neighbourPos).getDirectionalIO().get(direction.getOpposite()) != LevelNode.IOTypes.NONE)
+                            consumers.computeIfAbsent(node, node1 -> new ArrayList<>()).add(subNetwork1.itemStackHandler);
                     }
                 });
-
-
             }
+
         }
         return consumers;
     }
@@ -196,7 +270,8 @@ public class ItemSubNetwork extends AbstractSubNetwork {
         if (getNodeByPosition(worldPosition) == null) return LazyOptional.empty();
 
 
-        if (getNodeByPosition(worldPosition).getDirectionalIO().get(side) != LevelNode.IOTypes.NONE) return handlerLazyOptional.cast();
+        if (getNodeByPosition(worldPosition).getDirectionalIO().get(side) != LevelNode.IOTypes.NONE)
+            return handlerLazyOptional.cast();
         else return LazyOptional.empty();
     }
 
@@ -232,4 +307,5 @@ public class ItemSubNetwork extends AbstractSubNetwork {
     public int getRenderingColour() {
         return 0xff1800;
     }
+
 }

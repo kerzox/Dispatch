@@ -1,6 +1,7 @@
 package mod.kerzox.dispatch.client.component;
 
 import mod.kerzox.dispatch.Dispatch;
+import mod.kerzox.dispatch.client.gui.CableContainerScreen;
 import mod.kerzox.dispatch.client.gui.ICustomScreen;
 import mod.kerzox.dispatch.client.render.RenderingUtil;
 import net.minecraft.client.gui.GuiGraphics;
@@ -67,6 +68,10 @@ public class FilterList extends TexturedWidgetComponent {
 
     }
 
+    public List<ButtonComponent> getAvailableFilters() {
+        return availableFilters;
+    }
+
     @Override
     public boolean isMouseOver(double x, double y) {
         return false;
@@ -74,6 +79,11 @@ public class FilterList extends TexturedWidgetComponent {
 
     @Override
     public boolean mouseClicked(double p_93641_, double p_93642_, int p_93643_) {
+        for (ButtonComponent filter : getAvailableFilters()) {
+            if (filter.mouseClicked(p_93641_, p_93642_, p_93643_)) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -89,5 +99,8 @@ public class FilterList extends TexturedWidgetComponent {
     @Override
     protected void drawComponent(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
         graphics.blit(texture, getCorrectX(), getCorrectY(), u, v, width, height, 150, height);
+        for (ButtonComponent filter : getAvailableFilters()) {
+            filter.drawComponent(graphics, mouseX, mouseY, partialTicks);
+        }
     }
 }

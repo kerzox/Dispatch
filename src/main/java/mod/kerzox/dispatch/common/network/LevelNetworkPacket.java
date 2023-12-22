@@ -2,6 +2,9 @@ package mod.kerzox.dispatch.common.network;
 
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.capability.LevelNode;
+import mod.kerzox.dispatch.common.capability.NodeOperation;
+import mod.kerzox.dispatch.common.capability.item.ItemNodeOperation;
+import mod.kerzox.dispatch.common.capability.item.ItemSubNetwork;
 import mod.kerzox.dispatch.common.entity.DispatchNetworkEntity;
 import mod.kerzox.dispatch.common.network.client.LevelNetworkPacketClient;
 import net.minecraft.nbt.CompoundTag;
@@ -10,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent;
@@ -27,6 +31,26 @@ public class LevelNetworkPacket {
         tag1.putString("cap", capability.getName());
         tag.put("node_to_update", tag1);
         return new LevelNetworkPacket(tag);
+    }
+
+    public static void sendOperationToServer(Capability<?> capability, LevelNode node, NodeOperation operation) {
+        CompoundTag tag = new CompoundTag();
+        CompoundTag tag1 = new CompoundTag();
+        tag1.put("node", node.serialize());
+        tag1.putString("cap", capability.getName());
+        tag1.put("new_operation", operation.serializeNBT());
+        tag.put("operation_update", tag1);
+        PacketHandler.sendToServer(new LevelNetworkPacket(tag));
+    }
+
+    public static void removeOperation(Capability<?> capability, LevelNode node, int operationID) {
+        CompoundTag tag = new CompoundTag();
+        CompoundTag tag1 = new CompoundTag();
+        tag1.put("node", node.serialize());
+        tag1.putString("cap", capability.getName());
+        tag1.putInt("remove_operation", operationID);
+        tag.put("operation_update", tag1);
+        PacketHandler.sendToServer(new LevelNetworkPacket(tag));
     }
 
     public LevelNetworkPacket(CompoundTag up) {
@@ -48,7 +72,8 @@ public class LevelNetworkPacket {
     public static boolean handle(LevelNetworkPacket packet, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             if (ctx.get().getDirection() == NetworkDirection.PLAY_TO_SERVER) handleOnServer(packet, ctx);
-            else DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> LevelNetworkPacketClient.handleOnClient(packet, ctx));
+            else
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> LevelNetworkPacketClient.handleOnClient(packet, ctx));
         });
         return true;
     }
@@ -80,16 +105,15 @@ public class LevelNetworkPacket {
                                 );
                             }
                         }
+                        CompoundTag tag = new CompoundTag();
+                        tag.putString("node_refresh", "node_refresh");
+                        PacketHandler.sendToClientPlayer(new LevelNetworkPacket(tag), ctx.get().getSender());
 
-                        PacketHandler.sendToClientPlayer(new LevelNetworkPacket(new CompoundTag()), ctx.get().getSender());
-
-                    }
-                    else PacketHandler.sendToClientPlayer(new LevelNetworkPacket(network.serializeNBT()), player);
+                    } else PacketHandler.sendToClientPlayer(new LevelNetworkPacket(network.serializeNBT()), player);
                 }
             });
         }
     }
-
 
 
 }

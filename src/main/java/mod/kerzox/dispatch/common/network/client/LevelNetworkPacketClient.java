@@ -1,5 +1,7 @@
 package mod.kerzox.dispatch.common.network.client;
 
+import mod.kerzox.dispatch.client.gui.CableContainerScreen;
+import mod.kerzox.dispatch.client.menu.CableMenu;
 import mod.kerzox.dispatch.common.capability.LevelNetworkHandler;
 import mod.kerzox.dispatch.common.network.LevelNetworkPacket;
 import net.minecraft.client.Minecraft;
@@ -15,6 +17,11 @@ public class LevelNetworkPacketClient {
         if (player != null) {
             player.level().getCapability(LevelNetworkHandler.NETWORK).ifPresent(cap -> {
                 if (cap instanceof LevelNetworkHandler network) {
+                    if (packet.getNbtTag().contains("node_refresh")) {
+                        if (player.containerMenu instanceof CableMenu cableMenu) {
+                            cableMenu.refreshOperationList();
+                        }
+                    }
                     network.deserializeNBT(packet.getNbtTag());
                 }
             });

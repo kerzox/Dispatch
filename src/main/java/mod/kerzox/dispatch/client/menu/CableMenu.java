@@ -9,13 +9,9 @@ import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class CableMenu extends AbstractContainerMenu {
@@ -24,6 +20,8 @@ public class CableMenu extends AbstractContainerMenu {
     private BlockPos pos;
     private Inventory playerInventory;
     private LevelNode node;
+
+    private boolean refreshOps;
 
     public CableMenu(int windowId, Inventory inv, Player player, BlockPos pos, List<AbstractSubNetwork> subnetsFrom) {
         super(DispatchRegistry.Menus.CABLE_MENU.get(), windowId);
@@ -70,5 +68,17 @@ public class CableMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player p_38874_) {
         return !LevelNetworkHandler.getHandler(p_38874_.level()).getSubnetsFrom(LevelNode.of(pos)).isEmpty();
+    }
+
+    public void refreshOperationList() {
+        refreshOps = true;
+    }
+
+    public boolean isRefreshOps() {
+        return refreshOps;
+    }
+
+    public void setRefreshOps(boolean refreshOps) {
+        this.refreshOps = refreshOps;
     }
 }

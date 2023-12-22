@@ -1,5 +1,6 @@
 package mod.kerzox.dispatch.common.capability;
 
+import mod.kerzox.dispatch.common.capability.item.ItemNodeOperation;
 import mod.kerzox.dispatch.common.item.DispatchItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -145,5 +146,7 @@ public abstract class AbstractSubNetwork implements INBTSerializable<CompoundTag
 
     public abstract void mergeData(BlockPos positionBeingMerged, AbstractSubNetwork network);
 
+    public void addOperation(ItemNodeOperation from, LevelNode nodeByPosition) {
 
+    }
 }

@@ -21,23 +21,23 @@ import java.util.List;
 
 public class IOHandlerButton extends ButtonComponent {
 
-//    private int[][] colours = {
-//            {36, 112},        // defaultColour
-//            {24, 112},        // outputColour
-//            {12, 112},        // inputColour
-//            {0, 112},         // combinedColour
-//            {48, 112}         // NoneColour
-//    };
-
-    private int[][] colours = {
+    public static int[][] colours = {
             {36, 112},        // defaultColour
-            {24, 112},        // red
-            {12, 112},        // blue
-            {0, 112},         // purple
-            {48, 112},         // black
-            {60, 112} ,        // yellow
-            {72, 112} ,        // green
+            {24, 112},        // outputColour
+            {12, 112},        // inputColour
+            {0, 112},         // combinedColour
+            {48, 112}         // NoneColour
     };
+
+//    public static int[][] colours = {
+//            {36, 112},        // defaultColour
+//            {24, 112},        // red
+//            {12, 112},        // blue
+//            {0, 112},         // purple
+//            {48, 112},         // black
+//            {60, 112} ,        // yellow
+//            {72, 112} ,        // green
+//    };
 
     private LevelNode.IOTypes currentSetting = LevelNode.IOTypes.DEFAULT;
     private Direction direction = Direction.NORTH;
@@ -51,6 +51,10 @@ public class IOHandlerButton extends ButtonComponent {
         this.direction = direction;
         this.node = node;
         this.subNetwork = subNetwork;
+    }
+
+    public static int[] getColourFromIndex(LevelNode.IOTypes ioTypes) {
+        return colours[ioTypes.ordinal()];
     }
 
     @Override

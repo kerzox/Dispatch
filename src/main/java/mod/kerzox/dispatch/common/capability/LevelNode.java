@@ -1,5 +1,6 @@
 package mod.kerzox.dispatch.common.capability;
 
+import mod.kerzox.dispatch.common.capability.item.ItemNodeOperation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -8,7 +9,9 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.util.StringRepresentable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class LevelNode {
@@ -38,6 +41,23 @@ public class LevelNode {
         }
 
     }
+
+    public enum Colour implements StringRepresentable {
+        DEFAULT,
+        RED,
+        BLUE,
+        PURPLE,
+        BLACK,
+        YELLOW,
+        GREEN;
+
+        @Override
+        public String getSerializedName() {
+            return toString().toLowerCase();
+        }
+    }
+
+    private Map<Direction, List<NodeOperation>> operations = new HashMap<>();
 
     private HashMap<Direction, IOTypes> directionalIO = new HashMap<>(Map.of(
             Direction.NORTH, IOTypes.DEFAULT,
@@ -69,6 +89,18 @@ public class LevelNode {
         return directionalIO;
     }
 
+    public Map<Direction, List<NodeOperation>> getOperations() {
+        return operations;
+    }
+
+    public void addOperation(NodeOperation operation) {
+        getOperations().computeIfAbsent(operation.getDirection(), direction -> new ArrayList<>()).add(operation);
+    }
+
+    public void removeOperation(NodeOperation operation) {
+        getOperations().get(operation.getDirection()).removeIf(operation1 -> operation1.id == operation.id);
+    }
+
     public CompoundTag serialize() {
         CompoundTag tag = new CompoundTag();
         ListTag list = new ListTag();
@@ -80,6 +112,18 @@ public class LevelNode {
             list.add(tag1);
         });
         tag.put("io", list);
+        ListTag list2 = new ListTag();
+        operations.forEach((d, ops) -> {
+            CompoundTag tag1 = new CompoundTag();
+            ListTag list3 = new ListTag();
+            tag1.putString("direction", d.getSerializedName().toLowerCase());
+            for (NodeOperation operation : ops) {
+                list3.add(operation.serializeNBT());
+            }
+            tag1.put("operations", list3);
+            list2.add(tag1);
+        });
+        tag.put("node_operations", list2);
         return tag;
     }
 
@@ -91,6 +135,16 @@ public class LevelNode {
             Direction direction = Direction.valueOf(tag1.getString("direction").toUpperCase());
             IOTypes type = IOTypes.valueOf(tag1.getString("type").toUpperCase());
             directionalIO.put(direction, type);
+        }
+        operations.clear();
+        ListTag list2 = tag.getList("node_operations", Tag.TAG_COMPOUND);
+        for (int i = 0; i < list2.size(); i++) {
+            CompoundTag tag1 = list2.getCompound(i);
+            Direction direction = Direction.valueOf(tag1.getString("direction").toUpperCase());
+            ListTag list3 = tag1.getList("operations", Tag.TAG_COMPOUND);
+            for (int j = 0; j < list3.size(); j++) {
+                operations.computeIfAbsent(direction, direction1 -> new ArrayList<>()).add(ItemNodeOperation.from(list3.getCompound(j)));
+            }
         }
     }
 
